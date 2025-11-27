@@ -39,19 +39,19 @@ install(
 # Install library targets
 #----------------------------------------------
 
-set(INSTALL_TARGETS)
+set(install_targets)
 
 if(NFX_STRINGBUILDER_BUILD_SHARED)
-	list(APPEND INSTALL_TARGETS ${PROJECT_NAME})
+	list(APPEND install_targets ${PROJECT_NAME})
 endif()
 
 if(NFX_STRINGBUILDER_BUILD_STATIC)
-	list(APPEND INSTALL_TARGETS ${PROJECT_NAME}-static)
+	list(APPEND install_targets ${PROJECT_NAME}-static)
 endif()
 
-if(INSTALL_TARGETS)
+if(install_targets)
 	install(
-		TARGETS ${INSTALL_TARGETS}
+		TARGETS ${install_targets}
 		EXPORT nfx-stringbuilder-targets
 		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 			COMPONENT Development
@@ -173,4 +173,4 @@ if(NFX_STRINGBUILDER_BUILD_DOCUMENTATION)
 	endif()
 endif()
 
-message(STATUS "Installation configured for targets: ${INSTALL_TARGETS}")
+message(STATUS "Installation configured for targets: ${install_targets}")

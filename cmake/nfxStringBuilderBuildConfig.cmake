@@ -59,7 +59,7 @@ include(GNUInstallDirs)
 # Directory configuration
 #----------------------------------------------
 
-set(NFX_STRINGBUILDER_DIR          "${PROJECT_SOURCE_DIR}"        CACHE PATH  "Root directory"   )
+set(NFX_STRINGBUILDER_DIR          "${PROJECT_SOURCE_DIR}"             CACHE PATH  "Root directory"   )
 set(NFX_STRINGBUILDER_INCLUDE_DIR  "${NFX_STRINGBUILDER_DIR}/include"  CACHE PATH  "Include directory")
 set(NFX_STRINGBUILDER_SOURCE_DIR   "${NFX_STRINGBUILDER_DIR}/src"      CACHE PATH  "Source directory" )
 
