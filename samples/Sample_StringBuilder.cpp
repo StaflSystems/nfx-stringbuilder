@@ -413,5 +413,101 @@ int main()
 		std::cout << "\n";
 	}
 
+	//=====================================================================
+	// 14. Understanding reserve() vs resize() - Common itfall
+	//=====================================================================
+	{
+		std::cout << "14. Understanding reserve() vs resize() - Common Pitfall\n";
+		std::cout << "--------------------------------------------------------\n";
+
+		// WRONG: Using resize() for pre-allocation
+		std::cout << "Wrong approach - using resize() for pre-allocation:\n";
+		{
+			auto lease = StringBuilderPool::lease();
+			auto& buffer = lease.buffer();
+
+			buffer.resize( 100 ); // Creates 100 bytes of uninitialized data
+			std::cout << "  After resize(100): size=" << buffer.size() << " bytes\n";
+			std::cout << "  Content contains garbage (uninitialized memory)\n";
+
+			auto builder = lease.create();
+			builder.append( "Hello" ); // Appends AFTER the 100 garbage bytes
+			std::cout << "  After append('Hello'): size=" << buffer.size() << " bytes\n";
+			std::cout << "  Problem: 'Hello' is at position 100, preceded by garbage\n";
+			std::cout << "\n";
+		}
+
+		// CORRECT: Using reserve() for pre-allocation
+		std::cout << "Correct approach - using reserve() for pre-allocation:\n";
+		{
+			auto lease = StringBuilderPool::lease();
+			auto& buffer = lease.buffer();
+
+			buffer.reserve( 100 ); // Pre-allocates capacity, size remains 0
+			std::cout << "  After reserve(100): size=" << buffer.size()
+					  << ", capacity=" << buffer.capacity() << " bytes\n";
+
+			auto builder = lease.create();
+			builder.append( "Hello" ); // Appends from position 0
+			std::cout << "  After append('Hello'): size=" << buffer.size() << " bytes\n";
+			std::cout << "  Content: '" << lease.toString() << "'\n";
+			std::cout << "  Success: 'Hello' starts at position 0, no garbage\n";
+			std::cout << "\n";
+		}
+
+		// VALID: Using resize() for raw buffer manipulation
+		std::cout << "Valid use of resize() - raw buffer manipulation:\n";
+		{
+			auto lease = StringBuilderPool::lease();
+			auto& buffer = lease.buffer();
+
+			buffer.resize( 32 );		// Allocate fixed-size buffer
+			char* data = buffer.data(); // Get raw pointer
+
+			// Write directly to buffer (e.g., from C API, fread, etc.)
+			std::memcpy( data, "Direct write to buffer memory!", 31 );
+			data[31] = '\0';
+
+			std::cout << "  After resize(32) and direct write: '" << lease.toString() << "'\n";
+			std::cout << "  Use case: Direct memory operations, C API integration\n";
+			std::cout << "\n";
+		}
+
+		// Best practice: Capacity hints
+		std::cout << "Best practice - capacity hints:\n";
+		{
+			auto lease = StringBuilderPool::lease( 100 ); // Hint at creation time
+			auto& buffer = lease.buffer();
+			std::cout << "  After lease(100): size=" << buffer.size()
+					  << ", capacity=" << buffer.capacity() << " bytes\n";
+
+			auto builder = lease.create();
+			builder.append( "Hello" );
+			std::cout << "  After append('Hello'): '" << lease.toString() << "'\n";
+			std::cout << "\n";
+		}
+
+		// Alternative: Using StringBuilder.reserve() directly
+		std::cout << "Alternative - StringBuilder.reserve() method:\n";
+		{
+			auto lease = StringBuilderPool::lease();
+			auto builder = lease.create();
+
+			builder.reserve( 100 ); // Reserve capacity through StringBuilder
+			std::cout << "  After builder.reserve(100): size=" << builder.length()
+					  << ", capacity=" << lease.buffer().capacity() << " bytes\n";
+
+			builder.append( "Hello" );
+			std::cout << "  After append('Hello'): '" << lease.toString() << "'\n";
+			std::cout << "\n";
+		}
+
+		std::cout << "Summary:\n";
+		std::cout << "  reserve(n): Allocates capacity, keeps size=0 (for pre-allocation)\n";
+		std::cout << "  resize(n):  Sets size=n immediately (for raw buffer operations)\n";
+		std::cout << "  lease(n):   Pre-allocates with capacity hint (best practice)\n";
+		std::cout << "\n";
+	}
+
 	return 0;
 }

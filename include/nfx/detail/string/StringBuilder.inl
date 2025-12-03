@@ -171,6 +171,11 @@ namespace nfx::string
 		return m_buffer.size();
 	}
 
+	inline void StringBuilder::reserve( size_t newCapacity )
+	{
+		m_buffer.reserve( newCapacity );
+	}
+
 	inline void StringBuilder::resize( size_t newSize )
 	{
 		m_buffer.resize( newSize );

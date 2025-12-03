@@ -1013,6 +1013,85 @@ namespace nfx::string::test
 		EXPECT_EQ( lease.toString(), "Hel" );
 	}
 
+	TEST( StringBuilderAdvanced, ReserveOperations )
+	{
+		auto lease{ string::StringBuilderPool::lease() };
+		auto builder{ lease.create() };
+
+		// Get initial capacity
+		size_t initialCapacity{ lease.buffer().capacity() };
+
+		// Reserve larger capacity through StringBuilder
+		builder.reserve( initialCapacity * 2 );
+		EXPECT_GE( lease.buffer().capacity(), initialCapacity * 2 );
+
+		// Verify size is still zero after reserve
+		EXPECT_EQ( builder.length(), 0 );
+		EXPECT_TRUE( lease.buffer().isEmpty() );
+
+		// Append content within reserved capacity
+		std::string content( initialCapacity, 'x' );
+		builder.append( content );
+		EXPECT_EQ( builder.length(), initialCapacity );
+
+		// Capacity should not have changed (no reallocation)
+		EXPECT_GE( lease.buffer().capacity(), initialCapacity * 2 );
+	}
+
+	TEST( StringBuilderAdvanced, ReserveVsResizeComparison )
+	{
+		// Test reserve() - does not change size
+		{
+			auto lease{ string::StringBuilderPool::lease() };
+			auto builder{ lease.create() };
+
+			builder.reserve( 100 );
+			EXPECT_EQ( builder.length(), 0 ); // Size stays 0
+			EXPECT_GE( lease.buffer().capacity(), 100 );
+
+			builder.append( "Hello" );
+			EXPECT_EQ( lease.toString(), "Hello" ); // Content starts at position 0
+		}
+
+		// Test resize() - changes size immediately
+		{
+			auto lease{ string::StringBuilderPool::lease() };
+			auto builder{ lease.create() };
+
+			builder.resize( 100 );
+			EXPECT_EQ( builder.length(), 100 ); // Size is now 100
+			EXPECT_GE( lease.buffer().capacity(), 100 );
+
+			// Content is undefined (garbage)
+			builder.append( "Hello" );
+			EXPECT_EQ( builder.length(), 105 ); // 100 + 5
+		}
+	}
+
+	TEST( StringBuilderAdvanced, ReserveWithSubsequentOperations )
+	{
+		auto lease{ string::StringBuilderPool::lease() };
+		auto builder{ lease.create() };
+
+		// Reserve capacity
+		builder.reserve( 500 );
+		size_t reservedCapacity{ lease.buffer().capacity() };
+
+		// Multiple appends within reserved capacity
+		for ( int i = 0; i < 50; ++i )
+		{
+			builder << "Test ";
+		}
+
+		// Capacity should not have changed
+		EXPECT_EQ( lease.buffer().capacity(), reservedCapacity );
+		EXPECT_EQ( builder.length(), 250 ); // 50 * 5
+
+		// Stream operators should work correctly
+		builder << " End";
+		EXPECT_EQ( builder.length(), 254 );
+	}
+
 	//----------------------------------------------
 	// Edge cases and error handling
 	//----------------------------------------------

@@ -613,8 +613,16 @@ namespace nfx::string
 		inline size_t length() const noexcept;
 
 		/**
+		 * @brief Reserve minimum capacity for underlying buffer
+		 * @param newCapacity Minimum desired capacity in bytes
+		 * @throws std::bad_alloc if memory allocation fails
+		 */
+		inline void reserve( size_t newCapacity );
+
+		/**
 		 * @brief Resizes buffer to specified character count
 		 * @param newSize New buffer size in characters
+		 * @throws std::bad_alloc if memory allocation fails
 		 */
 		inline void resize( size_t newSize );
 
