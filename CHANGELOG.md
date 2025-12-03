@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `StringBuilder::reserve()` method for consistent API with `DynamicStringBuffer`
+- NIL
 
 ### Changed
 
@@ -30,6 +30,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 - NIL
+
+## [0.2.0] - 2025-12-03
+
+### Added
+
+- `StringBuilder::reserve()` method for consistent API with `DynamicStringBuffer`
+
+### Changed
+
+- Reorganized CMake build configuration for better modularity
+- Decentralized dependency management to test/benchmark modules
+- Improved package portability with PATH_VARS configuration
 
 ## [0.1.1] - 2025-11-28
 
