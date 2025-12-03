@@ -16,20 +16,6 @@ project(nfx-stringbuilder
 )
 
 #----------------------------------------------
-# Installation prefix configuration
-#----------------------------------------------
-
-# Set default installation path to nfx
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-	if(WIN32)
-		set(CMAKE_INSTALL_PREFIX "C:/Program Files/nfx" CACHE PATH "Installation directory" FORCE)
-	else()
-		set(CMAKE_INSTALL_PREFIX "/usr/local/nfx" CACHE PATH "Installation directory" FORCE)
-	endif()
-	message(STATUS "Setting install prefix to '${CMAKE_INSTALL_PREFIX}'")
-endif()
-
-#----------------------------------------------
 # Version configuration
 #----------------------------------------------
 
@@ -37,13 +23,6 @@ set(NFX_STRINGBUILDER_VERSION_MAJOR ${PROJECT_VERSION_MAJOR} CACHE INTERNAL "nfx
 set(NFX_STRINGBUILDER_VERSION_MINOR ${PROJECT_VERSION_MINOR} CACHE INTERNAL "nfx-stringbuilder minor version")
 set(NFX_STRINGBUILDER_VERSION_PATCH ${PROJECT_VERSION_PATCH} CACHE INTERNAL "nfx-stringbuilder patch version")
 set(NFX_STRINGBUILDER_VERSION       ${PROJECT_VERSION}       CACHE INTERNAL "nfx-stringbuilder version")
-
-#----------------------------------------------
-# Project metadata
-#----------------------------------------------
-
-set(NFX_STRINGBUILDER_LICENSE "MIT")
-set(NFX_STRINGBUILDER_LICENSE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
 
 #----------------------------------------------
 # Testing setup
@@ -86,7 +65,6 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 #----------------------------------------------
 
 include(nfxStringBuilderBuildConfig)
-include(nfxStringBuilderDependencies)
 include(nfxStringBuilderSources)
 include(nfxStringBuilderTargets)
 
