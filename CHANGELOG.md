@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- NIL
+- Method chaining support for all `StringBuilder::append()` methods (now return `StringBuilder&`)
 
 ### Changed
 

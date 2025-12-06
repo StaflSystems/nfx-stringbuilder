@@ -64,27 +64,31 @@ namespace nfx::string
 	// String append operations
 	//----------------------------------------------
 
-	inline void StringBuilder::append( std::string_view str )
+	inline StringBuilder& StringBuilder::append( std::string_view str )
 	{
 		m_buffer.append( str );
+		return *this;
 	}
 
-	inline void StringBuilder::append( const std::string& str )
+	inline StringBuilder& StringBuilder::append( const std::string& str )
 	{
 		m_buffer.append( str );
+		return *this;
 	}
 
-	inline void StringBuilder::append( const char* str )
+	inline StringBuilder& StringBuilder::append( const char* str )
 	{
 		if ( str )
 		{
 			m_buffer.append( str );
 		}
+		return *this;
 	}
 
-	inline void StringBuilder::append( char c )
+	inline StringBuilder& StringBuilder::append( char c )
 	{
 		m_buffer.append( c );
+		return *this;
 	}
 
 	//----------------------------------------------

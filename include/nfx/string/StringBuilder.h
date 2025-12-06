@@ -490,27 +490,30 @@ namespace nfx::string
 		/**
 		 * @brief Appends string_view contents to the buffer efficiently
 		 * @param str String view to append
+		 * @return Reference to this StringBuilder for chaining
 		 */
-		inline void append( std::string_view str );
+		inline StringBuilder& append( std::string_view str );
 
 		/**
 		 * @brief Appends std::string contents to the buffer
 		 * @param str String to append
+		 * @return Reference to this StringBuilder for chaining
 		 */
-		inline void append( const std::string& str );
+		inline StringBuilder& append( const std::string& str );
 
 		/**
 		 * @brief Appends null-terminated C-string to the buffer
 		 * @param str Null-terminated C-string to append (null pointer handled gracefully)
+		 * @return Reference to this StringBuilder for chaining
 		 */
-		inline void append( const char* str );
+		inline StringBuilder& append( const char* str );
 
 		/**
 		 * @brief Appends single character to the buffer
 		 * @param c Character to append
+		 * @return Reference to this StringBuilder for chaining
 		 */
-		inline void append( char c );
-
+		inline StringBuilder& append( char c );
 		//----------------------------------------------
 		// Stream operators
 		//----------------------------------------------
