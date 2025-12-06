@@ -881,6 +881,81 @@ namespace nfx::string::test
 		EXPECT_TRUE( mixed.find( "Big: 9999" ) != std::string::npos );
 	}
 
+	TEST( StringBuilderFormatting, NumericAppendMethods )
+	{
+		auto lease{ string::StringBuilderPool::lease() };
+		auto builder{ lease.create() };
+
+		// Test int8_t
+		builder.append( static_cast<std::int8_t>( -128 ) );
+		EXPECT_EQ( lease.toString(), "-128" );
+
+		// Test uint8_t
+		lease.buffer().clear();
+		builder.append( static_cast<std::uint8_t>( 255 ) );
+		EXPECT_EQ( lease.toString(), "255" );
+
+		// Test int16_t
+		lease.buffer().clear();
+		builder.append( static_cast<std::int16_t>( -32768 ) );
+		EXPECT_EQ( lease.toString(), "-32768" );
+
+		// Test uint16_t
+		lease.buffer().clear();
+		builder.append( static_cast<std::uint16_t>( 65535 ) );
+		EXPECT_EQ( lease.toString(), "65535" );
+
+		// Test int32_t
+		lease.buffer().clear();
+		builder.append( static_cast<std::int32_t>( -2147483647 ) );
+		EXPECT_EQ( lease.toString(), "-2147483647" );
+
+		// Test uint32_t
+		lease.buffer().clear();
+		builder.append( 4294967295U );
+		EXPECT_EQ( lease.toString(), "4294967295" );
+
+		// Test int64_t
+		lease.buffer().clear();
+		builder.append( static_cast<std::int64_t>( -9223372036854775807LL ) );
+		EXPECT_EQ( lease.toString(), "-9223372036854775807" );
+
+		// Test uint64_t
+		lease.buffer().clear();
+		builder.append( static_cast<std::uint64_t>( 18446744073709551615ULL ) );
+		EXPECT_EQ( lease.toString(), "18446744073709551615" ); // Test float
+		lease.buffer().clear();
+		builder.append( 3.14159f );
+		std::string floatResult{ lease.toString() };
+		EXPECT_TRUE( floatResult.find( "3.14" ) != std::string::npos );
+
+		// Test double
+		lease.buffer().clear();
+		builder.append( 2.718281828 );
+		std::string doubleResult{ lease.toString() };
+		EXPECT_TRUE( doubleResult.find( "2.718" ) != std::string::npos );
+
+		// Test chaining append() calls with numeric types
+		lease.buffer().clear();
+		builder.append( "Count: " )
+			.append( static_cast<std::int32_t>( 42 ) )
+			.append( ", Pi: " )
+			.append( 3.14f )
+			.append( ", Hex: " )
+			.append( static_cast<std::uint16_t>( 0xFF ) );
+		std::string mixed{ lease.toString() };
+		EXPECT_TRUE( mixed.find( "Count: 42" ) != std::string::npos );
+		EXPECT_TRUE( mixed.find( "Pi: 3.14" ) != std::string::npos );
+		EXPECT_TRUE( mixed.find( "Hex: 255" ) != std::string::npos ); // Verify append() produces same results as operator<<
+		lease.buffer().clear();
+		auto lease2{ string::StringBuilderPool::lease() };
+		auto builder2{ lease2.create() };
+
+		builder.append( static_cast<std::int32_t>( 12345 ) );
+		builder2 << static_cast<std::int32_t>( 12345 );
+		EXPECT_EQ( lease.toString(), lease2.toString() );
+	}
+
 	TEST( StringBuilderFormatting, FormatMethod )
 	{
 		auto lease{ string::StringBuilderPool::lease() };

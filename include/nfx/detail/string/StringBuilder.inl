@@ -92,6 +92,116 @@ namespace nfx::string
 		return *this;
 	}
 
+	inline StringBuilder& StringBuilder::append( std::int8_t value )
+	{
+		char temp[8]; // -128 to 127 needs max 4 chars + null
+		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), static_cast<int>( value ) );
+		if ( ec == std::errc() )
+		{
+			m_buffer.append( std::string_view( temp, ptr - temp ) );
+		}
+		return *this;
+	}
+
+	inline StringBuilder& StringBuilder::append( std::uint8_t value )
+	{
+		char temp[8]; // 0 to 255 needs max 3 chars + null
+		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), static_cast<unsigned>( value ) );
+		if ( ec == std::errc() )
+		{
+			m_buffer.append( std::string_view( temp, ptr - temp ) );
+		}
+		return *this;
+	}
+
+	inline StringBuilder& StringBuilder::append( std::int16_t value )
+	{
+		char temp[8]; // -32768 to 32767 needs max 6 chars + null
+		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
+		if ( ec == std::errc() )
+		{
+			m_buffer.append( std::string_view( temp, ptr - temp ) );
+		}
+		return *this;
+	}
+
+	inline StringBuilder& StringBuilder::append( std::uint16_t value )
+	{
+		char temp[8]; // 0 to 65535 needs max 5 chars + null
+		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
+		if ( ec == std::errc() )
+		{
+			m_buffer.append( std::string_view( temp, ptr - temp ) );
+		}
+		return *this;
+	}
+
+	inline StringBuilder& StringBuilder::append( std::int32_t value )
+	{
+		char temp[16]; // -2147483648 needs 11 chars + null terminator
+		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
+		if ( ec == std::errc() )
+		{
+			m_buffer.append( std::string_view( temp, ptr - temp ) );
+		}
+		return *this;
+	}
+
+	inline StringBuilder& StringBuilder::append( std::uint32_t value )
+	{
+		char temp[16]; // 4294967295 needs 10 chars + null terminator
+		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
+		if ( ec == std::errc() )
+		{
+			m_buffer.append( std::string_view( temp, ptr - temp ) );
+		}
+		return *this;
+	}
+
+	inline StringBuilder& StringBuilder::append( std::int64_t value )
+	{
+		char temp[24]; // -9223372036854775808 needs 20 chars + null terminator
+		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
+		if ( ec == std::errc() )
+		{
+			m_buffer.append( std::string_view( temp, ptr - temp ) );
+		}
+		return *this;
+	}
+
+	inline StringBuilder& StringBuilder::append( std::uint64_t value )
+	{
+		char temp[24]; // 18446744073709551615 needs 20 chars + null terminator
+		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
+		if ( ec == std::errc() )
+		{
+			m_buffer.append( std::string_view( temp, ptr - temp ) );
+		}
+		return *this;
+	}
+
+	inline StringBuilder& StringBuilder::append( float value )
+	{
+		char temp[32]; // Sufficient for scientific notation and special values
+		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
+		if ( ec == std::errc() )
+		{
+			m_buffer.append( std::string_view( temp, ptr - temp ) );
+		}
+		return *this;
+	}
+
+	inline StringBuilder& StringBuilder::append( double value )
+	{
+		char temp[32]; // Sufficient for scientific notation and special values
+		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
+		if ( ec == std::errc() )
+		{
+			m_buffer.append( std::string_view( temp, ptr - temp ) );
+		}
+		return *this;
+	}
+
 	//----------------------------------------------
 	// Stream operators
 	//----------------------------------------------
@@ -120,70 +230,54 @@ namespace nfx::string
 		return *this;
 	}
 
+	inline StringBuilder& StringBuilder::operator<<( std::int8_t value )
+	{
+		return append( value );
+	}
+
+	inline StringBuilder& StringBuilder::operator<<( std::uint8_t value )
+	{
+		return append( value );
+	}
+
+	inline StringBuilder& StringBuilder::operator<<( std::int16_t value )
+	{
+		return append( value );
+	}
+
+	inline StringBuilder& StringBuilder::operator<<( std::uint16_t value )
+	{
+		return append( value );
+	}
+
 	inline StringBuilder& StringBuilder::operator<<( std::int32_t value )
 	{
-		char temp[16];
-		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
-		if ( ec == std::errc() )
-		{
-			append( std::string_view( temp, ptr - temp ) );
-		}
-		return *this;
+		return append( value );
 	}
 
 	inline StringBuilder& StringBuilder::operator<<( std::uint32_t value )
 	{
-		char temp[16];
-		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
-		if ( ec == std::errc() )
-		{
-			append( std::string_view( temp, ptr - temp ) );
-		}
-		return *this;
+		return append( value );
 	}
 
 	inline StringBuilder& StringBuilder::operator<<( std::int64_t value )
 	{
-		char temp[24];
-		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
-		if ( ec == std::errc() )
-		{
-			append( std::string_view( temp, ptr - temp ) );
-		}
-		return *this;
+		return append( value );
 	}
 
 	inline StringBuilder& StringBuilder::operator<<( std::uint64_t value )
 	{
-		char temp[24];
-		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
-		if ( ec == std::errc() )
-		{
-			append( std::string_view( temp, ptr - temp ) );
-		}
-		return *this;
+		return append( value );
 	}
 
 	inline StringBuilder& StringBuilder::operator<<( float value )
 	{
-		char temp[32];
-		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
-		if ( ec == std::errc() )
-		{
-			append( std::string_view( temp, ptr - temp ) );
-		}
-		return *this;
+		return append( value );
 	}
 
 	inline StringBuilder& StringBuilder::operator<<( double value )
 	{
-		char temp[32];
-		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
-		if ( ec == std::errc() )
-		{
-			append( std::string_view( temp, ptr - temp ) );
-		}
-		return *this;
+		return append( value );
 	}
 
 	//----------------------------------------------

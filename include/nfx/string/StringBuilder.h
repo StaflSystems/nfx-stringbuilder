@@ -514,6 +514,77 @@ namespace nfx::string
 		 * @return Reference to this StringBuilder for chaining
 		 */
 		inline StringBuilder& append( char c );
+
+		/**
+		 * @brief Appends 8-bit signed integer to the buffer
+		 * @param value Integer value to append
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& append( std::int8_t value );
+
+		/**
+		 * @brief Appends 8-bit unsigned integer to the buffer
+		 * @param value Integer value to append
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& append( std::uint8_t value );
+
+		/**
+		 * @brief Appends 16-bit signed integer to the buffer
+		 * @param value Integer value to append
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& append( std::int16_t value );
+
+		/**
+		 * @brief Appends 16-bit unsigned integer to the buffer
+		 * @param value Integer value to append
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& append( std::uint16_t value );
+
+		/**
+		 * @brief Appends 32-bit signed integer to the buffer
+		 * @param value Integer value to append
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& append( std::int32_t value );
+
+		/**
+		 * @brief Appends 32-bit unsigned integer to the buffer
+		 * @param value Integer value to append
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& append( std::uint32_t value );
+
+		/**
+		 * @brief Appends 64-bit signed integer to the buffer
+		 * @param value Integer value to append
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& append( std::int64_t value );
+
+		/**
+		 * @brief Appends 64-bit unsigned integer to the buffer
+		 * @param value Integer value to append
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& append( std::uint64_t value );
+
+		/**
+		 * @brief Appends single-precision floating-point to the buffer
+		 * @param value Floating-point value to append
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& append( float value );
+
+		/**
+		 * @brief Appends double-precision floating-point to the buffer
+		 * @param value Floating-point value to append
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& append( double value );
+
 		//----------------------------------------------
 		// Stream operators
 		//----------------------------------------------
@@ -545,6 +616,34 @@ namespace nfx::string
 		 * @return Reference to this StringBuilder for chaining
 		 */
 		inline StringBuilder& operator<<( char c );
+
+		/**
+		 * @brief Stream operator for 8-bit signed integer
+		 * @param value Integer value to append
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& operator<<( std::int8_t value );
+
+		/**
+		 * @brief Stream operator for 8-bit unsigned integer
+		 * @param value Integer value to append
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& operator<<( std::uint8_t value );
+
+		/**
+		 * @brief Stream operator for 16-bit signed integer
+		 * @param value Integer value to append
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& operator<<( std::int16_t value );
+
+		/**
+		 * @brief Stream operator for 16-bit unsigned integer
+		 * @param value Integer value to append
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& operator<<( std::uint16_t value );
 
 		/**
 		 * @brief Stream operator for 32-bit signed integer
