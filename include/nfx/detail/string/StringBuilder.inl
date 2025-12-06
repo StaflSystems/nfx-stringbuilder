@@ -28,6 +28,7 @@
  * @details High-performance inline implementations for string builder pooling infrastructure
  */
 
+#include <charconv>
 #include <iterator>
 #include <utility>
 
@@ -121,37 +122,67 @@ namespace nfx::string
 
 	inline StringBuilder& StringBuilder::operator<<( std::int32_t value )
 	{
-		append( std::to_string( value ) );
+		char temp[16];
+		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
+		if ( ec == std::errc() )
+		{
+			append( std::string_view( temp, ptr - temp ) );
+		}
 		return *this;
 	}
 
 	inline StringBuilder& StringBuilder::operator<<( std::uint32_t value )
 	{
-		append( std::to_string( value ) );
+		char temp[16];
+		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
+		if ( ec == std::errc() )
+		{
+			append( std::string_view( temp, ptr - temp ) );
+		}
 		return *this;
 	}
 
 	inline StringBuilder& StringBuilder::operator<<( std::int64_t value )
 	{
-		append( std::to_string( value ) );
+		char temp[24];
+		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
+		if ( ec == std::errc() )
+		{
+			append( std::string_view( temp, ptr - temp ) );
+		}
 		return *this;
 	}
 
 	inline StringBuilder& StringBuilder::operator<<( std::uint64_t value )
 	{
-		append( std::to_string( value ) );
+		char temp[24];
+		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
+		if ( ec == std::errc() )
+		{
+			append( std::string_view( temp, ptr - temp ) );
+		}
 		return *this;
 	}
 
 	inline StringBuilder& StringBuilder::operator<<( float value )
 	{
-		append( std::to_string( value ) );
+		char temp[32];
+		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
+		if ( ec == std::errc() )
+		{
+			append( std::string_view( temp, ptr - temp ) );
+		}
 		return *this;
 	}
 
 	inline StringBuilder& StringBuilder::operator<<( double value )
 	{
-		append( std::to_string( value ) );
+		char temp[32];
+		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
+		if ( ec == std::errc() )
+		{
+			append( std::string_view( temp, ptr - temp ) );
+		}
 		return *this;
 	}
 
