@@ -228,8 +228,12 @@ namespace nfx::string
 		if ( !str.empty() )
 		{
 			const size_t new_size = m_size + str.size();
-			ensureCapacity( new_size );
-			std::memcpy( currentBuffer() + m_size, str.data(), str.size() );
+			if ( new_size > m_capacity ) [[unlikely]]
+			{
+				ensureCapacity( new_size );
+			}
+			char* buf = currentBuffer();
+			std::memcpy( buf + m_size, str.data(), str.size() );
 			m_size = new_size;
 		}
 	}
@@ -249,8 +253,12 @@ namespace nfx::string
 
 	void DynamicStringBuffer::append( char c )
 	{
-		ensureCapacity( m_size + 1 );
-		currentBuffer()[m_size] = c;
+		if ( m_size + 1 > m_capacity ) [[unlikely]]
+		{
+			ensureCapacity( m_size + 1 );
+		}
+		char* buf = currentBuffer();
+		buf[m_size] = c;
 		++m_size;
 	}
 
