@@ -89,24 +89,24 @@
 
 ```cmake
 # Build options
-option(NFX_STRINGBUILDER_BUILD_STATIC         "Build static library"               OFF )
-option(NFX_STRINGBUILDER_BUILD_SHARED         "Build shared library"               OFF )
+option(NFX_STRINGBUILDER_BUILD_STATIC        "Build static library"              OFF)
+option(NFX_STRINGBUILDER_BUILD_SHARED        "Build shared library"              OFF)
 
 # Development options
-option(NFX_STRINGBUILDER_BUILD_TESTS          "Build tests"                        OFF )
-option(NFX_STRINGBUILDER_BUILD_SAMPLES        "Build samples"                      OFF )
-option(NFX_STRINGBUILDER_BUILD_BENCHMARKS     "Build benchmarks"                   OFF )
-option(NFX_STRINGBUILDER_BUILD_DOCUMENTATION  "Build Doxygen documentation"        OFF )
+option(NFX_STRINGBUILDER_BUILD_TESTS         "Build tests"                       OFF)
+option(NFX_STRINGBUILDER_BUILD_SAMPLES       "Build samples"                     OFF)
+option(NFX_STRINGBUILDER_BUILD_BENCHMARKS    "Build benchmarks"                  OFF)
+option(NFX_STRINGBUILDER_BUILD_DOCUMENTATION "Build Doxygen documentation"       OFF)
 
 # Installation
-option(NFX_STRINGBUILDER_INSTALL_PROJECT      "Install project"                    OFF )
+option(NFX_STRINGBUILDER_INSTALL_PROJECT     "Install project"                   OFF)
 
 # Packaging
-option(NFX_STRINGBUILDER_PACKAGE_SOURCE       "Enable source package generation"   OFF )
-option(NFX_STRINGBUILDER_PACKAGE_ARCHIVE      "Enable TGZ/ZIP package generation"  OFF )
-option(NFX_STRINGBUILDER_PACKAGE_DEB          "Enable DEB package generation"      OFF )
-option(NFX_STRINGBUILDER_PACKAGE_RPM          "Enable RPM package generation"      OFF )
-option(NFX_STRINGBUILDER_PACKAGE_WIX          "Enable WiX MSI installer"           OFF )
+option(NFX_STRINGBUILDER_PACKAGE_SOURCE      "Enable source package generation"  OFF)
+option(NFX_STRINGBUILDER_PACKAGE_ARCHIVE     "Enable TGZ/ZIP package generation" OFF)
+option(NFX_STRINGBUILDER_PACKAGE_DEB         "Enable DEB package generation"     OFF)
+option(NFX_STRINGBUILDER_PACKAGE_RPM         "Enable RPM package generation"     OFF)
+option(NFX_STRINGBUILDER_PACKAGE_WIX         "Enable WiX MSI installer"          OFF)
 ```
 
 ### Using in Your Project
@@ -147,6 +147,22 @@ target_link_libraries(your_target PRIVATE nfx-stringbuilder::static)
 ```
 
 ### Building
+
+> ⚠️ **Important**: The library can use SIMD instructions (AVX2/SSE2) for optimized string copy operations. **Compiler flags are required** to enable these optimizations. Without proper flags, the library uses standard `memcpy` implementations.
+
+**Compiler Flags for SIMD:**
+
+- **GCC/Clang**: `-march=native` (auto-detect) or specific flags like `-msse2`, `-mavx`, `-mavx2`
+- **MSVC**: `/arch:AVX` or `/arch:AVX2`
+
+**CMake Example:**
+
+```cmake
+target_compile_options(your_target PRIVATE
+    $<$<CXX_COMPILER_ID:MSVC>:/arch:AVX2>
+    $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:-march=native>
+)
+```
 
 **Build Commands:**
 
@@ -742,4 +758,4 @@ All dependencies are automatically fetched via CMake FetchContent when building 
 
 ---
 
-_Updated on November 23, 2025_
+_Updated on December 07, 2025_
