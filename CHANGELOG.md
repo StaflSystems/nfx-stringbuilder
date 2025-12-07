@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Method chaining support for all `StringBuilder::append()` methods (now return `StringBuilder&`)
 - Numeric `append()` methods for `int8_t`, `uint8_t`, `int16_t`, `uint16_t`, `int32_t`, `uint32_t`, `int64_t`, `uint64_t`, `float`, and `double`
+- Variadic `append()` template overload for batch operations - append multiple arguments in a single call (supports strings, chars, and numeric types)
 
 ### Changed
 

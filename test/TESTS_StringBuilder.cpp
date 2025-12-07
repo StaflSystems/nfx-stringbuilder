@@ -2120,6 +2120,107 @@ namespace nfx::string::test
 	}
 
 	//----------------------------------------------
+	// Variadic append()
+	//----------------------------------------------
+
+	TEST( StringBuilderVariadicAppend, BasicStringsOnly )
+	{
+		auto lease{ string::StringBuilderPool::lease() };
+		auto builder{ lease.create() };
+
+		// Test variadic append with strings only
+		builder.append( "Hello", ", ", "World", "!" );
+
+		EXPECT_EQ( lease.toString(), "Hello, World!" );
+	}
+
+	TEST( StringBuilderVariadicAppend, TwoArguments )
+	{
+		auto lease{ string::StringBuilderPool::lease() };
+		auto builder{ lease.create() };
+
+		// Test minimum 2 arguments (SFINAE constraint)
+		builder.append( "First", "Second" );
+
+		EXPECT_EQ( lease.toString(), "FirstSecond" );
+	}
+
+	TEST( StringBuilderVariadicAppend, ManyArguments )
+	{
+		auto lease{ string::StringBuilderPool::lease() };
+		auto builder{ lease.create() };
+
+		// Test with many arguments
+		builder.append( "A", "B", "C", "D", "E", "F", "G", "H", "I" );
+
+		EXPECT_EQ( lease.toString(), "ABCDEFGHI" );
+	}
+
+	TEST( StringBuilderVariadicAppend, MixedStringTypes )
+	{
+		auto lease{ string::StringBuilderPool::lease() };
+		auto builder{ lease.create() };
+
+		std::string stdStr{ "std::string" };
+		std::string_view sv{ " view" };
+		const char* cstr{ " cstring" };
+
+		// Test with mixed string types
+		builder.append( stdStr, sv, cstr, " literal" );
+
+		EXPECT_EQ( lease.toString(), "std::string view cstring literal" );
+	}
+
+	TEST( StringBuilderVariadicAppend, WithNumericTypes )
+	{
+		auto lease{ string::StringBuilderPool::lease() };
+		auto builder{ lease.create() };
+
+		// Test with numeric types (using std::to_string)
+		builder.append( "Count: ", std::to_string( 42 ), ", Value: ", std::to_string( 3.14 ) );
+
+		std::string result{ lease.toString() };
+		EXPECT_TRUE( result.find( "Count: 42" ) != std::string::npos );
+		EXPECT_TRUE( result.find( "Value: 3.14" ) != std::string::npos );
+	}
+
+	TEST( StringBuilderVariadicAppend, EmptyStrings )
+	{
+		auto lease{ string::StringBuilderPool::lease() };
+		auto builder{ lease.create() };
+
+		// Test with empty strings
+		builder.append( "", "Content", "" );
+
+		EXPECT_EQ( lease.toString(), "Content" );
+	}
+
+	TEST( StringBuilderVariadicAppend, ChainedWithRegularAppend )
+	{
+		auto lease{ string::StringBuilderPool::lease() };
+		auto builder{ lease.create() };
+
+		// Test variadic append mixed with regular append
+		builder.append( "Start" );
+		builder.append( " ", "middle", " " );
+		builder.append( "end" );
+
+		EXPECT_EQ( lease.toString(), "Start middle end" );
+	}
+
+	TEST( StringBuilderVariadicAppend, SingleCharacters )
+	{
+		auto lease{ string::StringBuilderPool::lease() };
+		auto builder{ lease.create() };
+
+		// Test with single characters
+		builder.append( "A", "B" );
+		builder << 'C';
+
+		EXPECT_EQ( lease.toString(), "ABC" );
+	}
+
+	//----------------------------------------------
 	// SIMD optimization
 	//----------------------------------------------
 

@@ -586,6 +586,26 @@ namespace nfx::string
 		inline StringBuilder& append( double value );
 
 		//----------------------------------------------
+		// Batch operations
+		//----------------------------------------------
+
+		/**
+		 * @brief Append multiple arguments in one call (strings, characters, numeric types)
+		 * @tparam T Type of the first argument (any type supported by append())
+		 * @tparam Args Types of the remaining arguments (any type supported by append())
+		 * @param first First argument to append
+		 * @param args Remaining arguments to append
+		 * @return Reference to this StringBuilder for chaining
+		 *
+		 * Example:
+		 * @code
+		 * builder.append("User ", userId, " (", userName, ") logged in at ", timestamp);
+		 * @endcode
+		 */
+		template <typename T, typename... Args, typename = std::enable_if_t<( sizeof...( Args ) > 0 )>>
+		inline StringBuilder& append( T&& first, Args&&... args );
+
+		//----------------------------------------------
 		// Stream operators
 		//----------------------------------------------
 

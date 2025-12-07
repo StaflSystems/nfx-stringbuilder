@@ -250,9 +250,12 @@ namespace nfx::string::benchmark
 			{
 				auto lease = StringBuilderPool::lease();
 				auto builder = lease.create();
-				builder << "Iteration " << std::to_string( i ) << ": " << small_strings[i % small_strings.size()];
-				std::string result = lease.toString();
-				::benchmark::DoNotOptimize( result );
+				builder << "Iteration " << i << ": " << small_strings[i % small_strings.size()];
+
+				// Access buffer without string copy to truly test pooling efficiency
+				auto view = lease.buffer().toStringView();
+				::benchmark::DoNotOptimize( view.data() );
+				::benchmark::DoNotOptimize( view.size() );
 			}
 		}
 	}
@@ -318,90 +321,10 @@ namespace nfx::string::benchmark
 
 			for ( size_t i = 0; i < small_strings.size(); ++i )
 			{
-				builder << "Item " << std::to_string( i ) << ": " << small_strings[i] << "\n";
+				builder << "Item " << i << ": " << small_strings[i] << "\n";
 			}
 
 			builder << "Footer: " << medium_strings[1];
-
-			std::string result = lease.toString();
-			::benchmark::DoNotOptimize( result );
-		}
-	}
-
-	//----------------------------------------------
-	// Advanced
-	//----------------------------------------------
-
-	//----------------------------
-	// Buffer reuse
-	//----------------------------
-
-	static void BM_StringBuilder_BufferReuse( ::benchmark::State& state )
-	{
-		// Test buffer reuse efficiency
-		for ( auto _ : state )
-		{
-			// Multiple consecutive uses to test pooling
-			for ( int cycle = 0; cycle < 5; ++cycle )
-			{
-				auto lease = StringBuilderPool::lease();
-				auto builder = lease.create();
-
-				for ( const auto& str : medium_strings )
-				{
-					builder << "Cycle " << std::to_string( cycle ) << ": " << str << " ";
-				}
-
-				std::string result = lease.toString();
-				::benchmark::DoNotOptimize( result );
-				// Buffer returned to pool here when lease destructs
-			}
-		}
-	}
-
-	//----------------------------
-	// Zero-allocation
-	//----------------------------
-
-	static void BM_StringBuilder_ZeroAlloc( ::benchmark::State& state )
-	{
-		// Test pure builder operations without final string conversion
-		for ( auto _ : state )
-		{
-			auto lease = StringBuilderPool::lease();
-			auto builder = lease.create();
-
-			for ( const auto& str : small_strings )
-			{
-				builder << str << " ";
-			}
-
-			// Just access the buffer without creating string
-			auto view = lease.buffer().toStringView();
-			::benchmark::DoNotOptimize( view );
-		}
-	}
-
-	//----------------------------
-	// Memory pressure
-	//----------------------------
-
-	static void BM_StringBuilder_MemoryPressure( ::benchmark::State& state )
-	{
-		// Simulate memory pressure with large strings
-		for ( auto _ : state )
-		{
-			auto lease = StringBuilderPool::lease();
-			auto builder = lease.create();
-
-			// Build a large result
-			for ( int i = 0; i < 20; ++i )
-			{
-				for ( const auto& str : large_strings )
-				{
-					builder << str << " ";
-				}
-			}
 
 			std::string result = lease.toString();
 			::benchmark::DoNotOptimize( result );
@@ -505,6 +428,161 @@ namespace nfx::string::benchmark
 			::benchmark::DoNotOptimize( result );
 		}
 	}
+
+	//----------------------------------------------
+	// Variadic append operations
+	//----------------------------------------------
+
+	static void BM_StringBuilder_MultipleAppends( ::benchmark::State& state )
+	{
+		for ( auto _ : state )
+		{
+			auto lease = StringBuilderPool::lease();
+			auto builder = lease.create();
+
+			builder.append( "SELECT " )
+				.append( "id" )
+				.append( ", " )
+				.append( "name" )
+				.append( ", " )
+				.append( "email" )
+				.append( " FROM users WHERE status = '" )
+				.append( "active" )
+				.append( "'" );
+
+			::benchmark::DoNotOptimize( builder.length() );
+		}
+	}
+
+	static void BM_StringBuilder_VariadicAppend( ::benchmark::State& state )
+	{
+		for ( auto _ : state )
+		{
+			auto lease = StringBuilderPool::lease();
+			auto builder = lease.create();
+
+			builder.append( "SELECT ", "id", ", ", "name", ", ", "email",
+				" FROM users WHERE status = '", "active", "'" );
+
+			::benchmark::DoNotOptimize( builder.length() );
+		}
+	}
+
+	static void BM_StringBuilder_MultipleAppends_WithNumeric( ::benchmark::State& state )
+	{
+		for ( auto _ : state )
+		{
+			auto lease = StringBuilderPool::lease();
+			auto builder = lease.create();
+
+			builder.append( "User " )
+				.append( 12345 )
+				.append( " (" )
+				.append( "Alice" )
+				.append( ") logged in at " )
+				.append( 1735000000 )
+				.append( " with score " )
+				.append( 99.5 )
+				.append( "%" );
+
+			::benchmark::DoNotOptimize( builder.length() );
+		}
+	}
+
+	static void BM_StringBuilder_VariadicAppend_WithNumeric( ::benchmark::State& state )
+	{
+		for ( auto _ : state )
+		{
+			auto lease = StringBuilderPool::lease();
+			auto builder = lease.create();
+
+			builder.append( "User ", 12345, " (", "Alice", ") logged in at ",
+				1735000000, " with score ", 99.5, "%" );
+
+			::benchmark::DoNotOptimize( builder.length() );
+		}
+	}
+
+	//----------------------------------------------
+	// Advanced
+	//----------------------------------------------
+
+	//----------------------------
+	// Buffer reuse
+	//----------------------------
+
+	static void BM_StringBuilder_BufferReuse( ::benchmark::State& state )
+	{
+		// Test buffer reuse efficiency - multiple builds reusing same pooled buffer
+		for ( auto _ : state )
+		{
+			for ( int cycle = 0; cycle < 5; ++cycle )
+			{
+				auto lease = StringBuilderPool::lease();
+				auto builder = lease.create();
+
+				for ( const auto& str : medium_strings )
+				{
+					builder << "Cycle " << cycle << ": " << str << " ";
+				}
+
+				// Access buffer without string copy
+				auto view = lease.buffer().toStringView();
+				::benchmark::DoNotOptimize( view.data() );
+				::benchmark::DoNotOptimize( view.size() );
+			}
+		}
+	}
+
+	//----------------------------
+	// Zero-allocation
+	//----------------------------
+
+	static void BM_StringBuilder_ZeroAlloc( ::benchmark::State& state )
+	{
+		// Test pure builder operations without final string conversion
+		for ( auto _ : state )
+		{
+			auto lease = StringBuilderPool::lease();
+			auto builder = lease.create();
+
+			for ( const auto& str : small_strings )
+			{
+				builder << str << " ";
+			}
+
+			// Just access the buffer without creating string
+			auto view = lease.buffer().toStringView();
+			::benchmark::DoNotOptimize( view );
+		}
+	}
+
+	//----------------------------
+	// Memory pressure
+	//----------------------------
+
+	static void BM_StringBuilder_MemoryPressure( ::benchmark::State& state )
+	{
+		// Simulate memory pressure with large strings
+		for ( auto _ : state )
+		{
+			auto lease = StringBuilderPool::lease();
+			auto builder = lease.create();
+
+			// Build a large result
+			for ( int i = 0; i < 20; ++i )
+			{
+				for ( const auto& str : large_strings )
+				{
+					builder << str << " ";
+				}
+			}
+
+			std::string result = lease.toString();
+			::benchmark::DoNotOptimize( result );
+		}
+	}
+
 } // namespace nfx::string::benchmark
 
 //=====================================================================
@@ -592,6 +670,54 @@ BENCHMARK( nfx::string::benchmark::BM_StringBuilder_MixedOperations )
 	->Unit( benchmark::kNanosecond );
 
 //----------------------------------------------
+// Capacity hints
+//----------------------------------------------
+
+BENCHMARK( nfx::string::benchmark::BM_StringBuilder_NoHint )
+	->MinTime( 1.0 )
+	->Unit( benchmark::kNanosecond );
+
+BENCHMARK( nfx::string::benchmark::BM_StringBuilder_WithHint )
+	->MinTime( 1.0 )
+	->Unit( benchmark::kNanosecond );
+
+//----------------------------------------------
+// format() method
+//----------------------------------------------
+
+BENCHMARK( nfx::string::benchmark::BM_StdFormat_ComplexFormatting )
+	->MinTime( 1.0 )
+	->Unit( benchmark::kNanosecond );
+
+BENCHMARK( nfx::string::benchmark::BM_StringBuilder_FormatMethod )
+	->MinTime( 1.0 )
+	->Unit( benchmark::kNanosecond );
+
+BENCHMARK( nfx::string::benchmark::BM_StringBuilder_ManualFormatting )
+	->MinTime( 1.0 )
+	->Unit( benchmark::kNanosecond );
+
+//----------------------------------------------
+// Variadic append operations
+//----------------------------------------------
+
+BENCHMARK( nfx::string::benchmark::BM_StringBuilder_MultipleAppends )
+	->MinTime( 1.0 )
+	->Unit( benchmark::kNanosecond );
+
+BENCHMARK( nfx::string::benchmark::BM_StringBuilder_VariadicAppend )
+	->MinTime( 1.0 )
+	->Unit( benchmark::kNanosecond );
+
+BENCHMARK( nfx::string::benchmark::BM_StringBuilder_MultipleAppends_WithNumeric )
+	->MinTime( 1.0 )
+	->Unit( benchmark::kNanosecond );
+
+BENCHMARK( nfx::string::benchmark::BM_StringBuilder_VariadicAppend_WithNumeric )
+	->MinTime( 1.0 )
+	->Unit( benchmark::kNanosecond );
+
+//----------------------------------------------
 // Advanced
 //----------------------------------------------
 
@@ -620,31 +746,7 @@ BENCHMARK( nfx::string::benchmark::BM_StringBuilder_MemoryPressure )
 	->Unit( benchmark::kNanosecond );
 
 //----------------------------------------------
-// Capacity hints
+// Benchmark main entry point
 //----------------------------------------------
-
-BENCHMARK( nfx::string::benchmark::BM_StringBuilder_NoHint )
-	->MinTime( 1.0 )
-	->Unit( benchmark::kNanosecond );
-
-BENCHMARK( nfx::string::benchmark::BM_StringBuilder_WithHint )
-	->MinTime( 1.0 )
-	->Unit( benchmark::kNanosecond );
-
-//----------------------------------------------
-// format() method
-//----------------------------------------------
-
-BENCHMARK( nfx::string::benchmark::BM_StdFormat_ComplexFormatting )
-	->MinTime( 1.0 )
-	->Unit( benchmark::kNanosecond );
-
-BENCHMARK( nfx::string::benchmark::BM_StringBuilder_FormatMethod )
-	->MinTime( 1.0 )
-	->Unit( benchmark::kNanosecond );
-
-BENCHMARK( nfx::string::benchmark::BM_StringBuilder_ManualFormatting )
-	->MinTime( 1.0 )
-	->Unit( benchmark::kNanosecond );
 
 BENCHMARK_MAIN();

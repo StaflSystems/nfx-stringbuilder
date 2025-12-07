@@ -93,6 +93,15 @@
 | **BM_StringBuilder_FormatMethod**     | 2381 ns   | **2311 ns** |           2858 ns |               2551 ns |                2505 ns |      2874 ns |
 | **BM_StringBuilder_ManualFormatting** | 1974 ns   | **1829 ns** |           3401 ns |               3430 ns |                3434 ns |      3619 ns |
 
+## Variadic append() Benchmarks
+
+| Operation                                        | Linux GCC | Linux Clang | Windows MinGW GCC | Windows Clang-GNU-CLI | Windows Clang-MSVC-CLI | Windows MSVC |
+| ------------------------------------------------ | --------- | ----------- | ----------------: | --------------------: | ---------------------: | -----------: |
+| **BM_StringBuilder_MultipleAppends**             | TBD       | TBD         |               TBD |                   TBD |                    TBD |          TBD |
+| **BM_StringBuilder_VariadicAppend**              | TBD       | TBD         |               TBD |                   TBD |                    TBD |          TBD |
+| **BM_StringBuilder_MultipleAppends_WithNumeric** | TBD       | TBD         |               TBD |                   TBD |                    TBD |          TBD |
+| **BM_StringBuilder_VariadicAppend_WithNumeric**  | TBD       | TBD         |               TBD |                   TBD |                    TBD |          TBD |
+
 ---
 
-_Updated on November 23, 2025_
+_Updated on December 07, 2025_

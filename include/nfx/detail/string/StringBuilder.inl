@@ -203,6 +203,22 @@ namespace nfx::string
 	}
 
 	//----------------------------------------------
+	// Batch operations
+	//----------------------------------------------
+
+	template <typename T, typename... Args, typename>
+	inline StringBuilder& StringBuilder::append( T&& first, Args&&... args )
+	{
+		append( first );
+		if constexpr ( sizeof...( Args ) > 0 )
+		{
+			( append( args ), ... );
+		}
+
+		return *this;
+	}
+
+	//----------------------------------------------
 	// Stream operators
 	//----------------------------------------------
 
