@@ -7,7 +7,6 @@
 #----------------------------------------------
 
 if(NOT NFX_STRINGBUILDER_INSTALL_PROJECT)
-	message(STATUS "Installation disabled, skipping...")
 	return()
 endif()
 
@@ -26,7 +25,7 @@ install(
 # Install library targets
 #----------------------------------------------
 
-set(install_targets)
+set(install_targets "")
 
 if(NFX_STRINGBUILDER_BUILD_SHARED)
 	list(APPEND install_targets ${PROJECT_NAME})

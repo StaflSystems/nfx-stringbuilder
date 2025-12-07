@@ -7,7 +7,6 @@
 #----------------------------------------------
 
 if(NOT NFX_STRINGBUILDER_BUILD_SAMPLES)
-	message(STATUS "Samples disabled, skipping...")
 	return()
 endif()
 
@@ -15,7 +14,7 @@ endif()
 # Samples source files
 #----------------------------------------------
 
-set(sample_sources)
+set(sample_sources "")
 
 list(APPEND sample_sources
 	Sample_StringBuilder.cpp

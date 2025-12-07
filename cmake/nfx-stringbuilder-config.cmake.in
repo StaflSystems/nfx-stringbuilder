@@ -5,9 +5,9 @@
 # 
 # Usage:
 #   find_package(nfx-stringbuilder REQUIRED)
-#   target_link_libraries(your_target PRIVATE nfx-stringbuilder::nfx-stringbuilder)  # Shared library
+#   target_link_libraries(your_target PRIVATE nfx-stringbuilder::nfx-stringbuilder) # Shared library
 #   # OR
-#   target_link_libraries(your_target PRIVATE nfx-stringbuilder::static)             # Static library
+#   target_link_libraries(your_target PRIVATE nfx-stringbuilder::static)            # Static library
 #
 # Available targets:
 #   nfx-stringbuilder::nfx-stringbuilder - Shared library

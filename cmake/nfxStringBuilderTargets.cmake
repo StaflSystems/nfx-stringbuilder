@@ -3,6 +3,14 @@
 #==============================================================================
 
 #----------------------------------------------
+# Check if we have sources to build
+#----------------------------------------------
+
+if(NOT private_sources)
+	return()
+endif()
+
+#----------------------------------------------
 # Targets definition
 #----------------------------------------------
 
@@ -31,7 +39,7 @@ if(NFX_STRINGBUILDER_BUILD_STATIC)
 	)
 
 	set_target_properties(${PROJECT_NAME}-static PROPERTIES
-		OUTPUT_NAME ${PROJECT_NAME}-static-${PROJECT_VERSION}
+		OUTPUT_NAME ${PROJECT_NAME}-static
 		ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
 	)
 
@@ -57,9 +65,9 @@ function(configure_target target_name)
 		CXX_STANDARD 20
 		CXX_STANDARD_REQUIRED ON
 		CXX_EXTENSIONS OFF
+		POSITION_INDEPENDENT_CODE ON
 		VERSION ${PROJECT_VERSION}
 		SOVERSION ${PROJECT_VERSION_MAJOR}
-		POSITION_INDEPENDENT_CODE ON
 		DEBUG_POSTFIX "-d"
 	)
 endfunction()
@@ -71,7 +79,6 @@ if(NFX_STRINGBUILDER_BUILD_SHARED)
 		set_target_properties(${PROJECT_NAME} PROPERTIES
 			WINDOWS_EXPORT_ALL_SYMBOLS TRUE
 		)
-
 		configure_file(
 			${CMAKE_CURRENT_SOURCE_DIR}/cmake/nfxStringBuilderVersion.rc.in
 			${CMAKE_BINARY_DIR}/nfxStringBuilder.rc
