@@ -80,6 +80,15 @@ foreach(benchmark_source ${benchmark_sources})
 		)
 
 		#----------------------------------------------
+		# Enable specific CPU features
+		#----------------------------------------------
+
+		target_compile_options(${benchmark_target_name} PRIVATE
+			$<$<CXX_COMPILER_ID:MSVC>:/arch:AVX2>
+			$<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:-msse4.2>
+		)
+
+		#----------------------------------------------
 		# Properties
 		#----------------------------------------------
 

@@ -2118,4 +2118,55 @@ namespace nfx::string::test
 		EXPECT_EQ( buffer2.toString(), "Source buffer modified" );
 		EXPECT_EQ( buffer1.toString(), "Source buffer" ); // Source still unchanged
 	}
+
+	//----------------------------------------------
+	// SIMD optimization
+	//----------------------------------------------
+
+#if defined( __AVX2__ ) || defined( __SSE2__ )
+	TEST( DynamicStringBufferSIMD, LargeStringCopy )
+	{
+		auto lease{ string::StringBuilderPool::lease() };
+		auto& buffer{ lease.buffer() };
+
+		// Test with string large enough to trigger SIMD path (> 64 bytes)
+		std::string large( 128, 'A' );
+		buffer.append( large );
+
+		EXPECT_EQ( buffer.size(), 128 );
+		EXPECT_EQ( buffer.toString(), large );
+	}
+
+	TEST( DynamicStringBufferSIMD, VeryLargeStringCopy )
+	{
+		auto lease{ string::StringBuilderPool::lease() };
+		auto& buffer{ lease.buffer() };
+
+		// Test with very large string to stress SIMD optimization
+		std::string veryLarge( 1024, 'B' );
+		buffer.append( veryLarge );
+
+		EXPECT_EQ( buffer.size(), 1024 );
+		EXPECT_EQ( buffer.toString(), veryLarge );
+	}
+
+	TEST( DynamicStringBufferSIMD, MultipleAppendsSIMDPath )
+	{
+		auto lease{ string::StringBuilderPool::lease() };
+		auto& buffer{ lease.buffer() };
+
+		// Multiple large appends to test SIMD consistency
+		std::string segment( 100, 'X' );
+		for ( int i{ 0 }; i < 10; ++i )
+		{
+			buffer.append( segment );
+		}
+
+		EXPECT_EQ( buffer.size(), 1000 );
+		std::string result{ buffer.toString() };
+		EXPECT_EQ( result.length(), 1000 );
+		EXPECT_EQ( result.front(), 'X' );
+		EXPECT_EQ( result.back(), 'X' );
+	}
+#endif
 } // namespace nfx::string::test

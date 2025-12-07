@@ -30,6 +30,12 @@
 #include <algorithm>
 #include <cstring>
 
+#ifdef _MSC_VER
+#	include <intrin.h>
+#elif defined( __GNUC__ ) || defined( __clang__ )
+#	include <immintrin.h>
+#endif
+
 #include "nfx/string/StringBuilder.h"
 #include "DynamicStringBufferPool.h"
 
@@ -225,17 +231,63 @@ namespace nfx::string
 
 	void DynamicStringBuffer::append( std::string_view str )
 	{
-		if ( !str.empty() )
+		if ( str.empty() ) [[unlikely]]
 		{
-			const size_t new_size = m_size + str.size();
-			if ( new_size > m_capacity ) [[unlikely]]
-			{
-				ensureCapacity( new_size );
-			}
-			char* buf = currentBuffer();
-			std::memcpy( buf + m_size, str.data(), str.size() );
-			m_size = new_size;
+			return;
 		}
+
+		const size_t newSize = m_size + str.size();
+		if ( newSize > m_capacity ) [[unlikely]]
+		{
+			ensureCapacity( newSize );
+		}
+
+		char* dest = currentBuffer() + m_size;
+		const char* src = str.data();
+		size_t len = str.size();
+
+#if defined( __AVX2__ ) || ( defined( _MSC_VER ) && defined( __AVX2__ ) )
+		if ( len >= 64 )
+		{
+			size_t remaining = len;
+			while ( remaining >= 32 )
+			{
+				__m256i chunk = _mm256_loadu_si256( reinterpret_cast<const __m256i*>( src ) );
+				_mm256_storeu_si256( reinterpret_cast<__m256i*>( dest ), chunk );
+				src += 32;
+				dest += 32;
+				remaining -= 32;
+			}
+			if ( remaining > 0 )
+			{
+				std::memcpy( dest, src, remaining );
+			}
+		}
+		else
+#elif defined( __SSE2__ ) || ( defined( _MSC_VER ) && ( defined( _M_X64 ) || defined( _M_IX86 ) ) )
+		if ( len >= 64 )
+		{
+			size_t remaining = len;
+			while ( remaining >= 16 )
+			{
+				__m128i chunk = _mm_loadu_si128( reinterpret_cast<const __m128i*>( src ) );
+				_mm_storeu_si128( reinterpret_cast<__m128i*>( dest ), chunk );
+				src += 16;
+				dest += 16;
+				remaining -= 16;
+			}
+			if ( remaining > 0 )
+			{
+				std::memcpy( dest, src, remaining );
+			}
+		}
+		else
+#endif
+		{
+			std::memcpy( dest, src, len );
+		}
+
+		m_size = newSize;
 	}
 
 	void DynamicStringBuffer::append( const std::string& str )
@@ -257,9 +309,8 @@ namespace nfx::string
 		{
 			ensureCapacity( m_size + 1 );
 		}
-		char* buf = currentBuffer();
-		buf[m_size] = c;
-		++m_size;
+		char* buf = m_onHeap ? m_heapBuffer.get() : m_stackBuffer;
+		buf[m_size++] = c;
 	}
 
 	//----------------------------------------------
@@ -312,10 +363,10 @@ namespace nfx::string
 		}
 
 		// Calculate new capacity with growth factor
-		size_t new_capacity = std::max( needed_capacity,
+		size_t newCapacity = std::max( needed_capacity,
 			static_cast<size_t>( m_capacity * GROWTH_FACTOR ) );
 
-		if ( !m_onHeap && new_capacity <= STACK_BUFFER_SIZE )
+		if ( !m_onHeap && newCapacity <= STACK_BUFFER_SIZE )
 		{
 			return;
 		}
@@ -323,24 +374,24 @@ namespace nfx::string
 		if ( !m_onHeap )
 		{
 			// Transition from stack to heap
-			m_heapBuffer = std::make_unique<char[]>( new_capacity );
+			m_heapBuffer = std::make_unique<char[]>( newCapacity );
 			if ( m_size > 0 )
 			{
 				std::memcpy( m_heapBuffer.get(), m_stackBuffer, m_size );
 			}
 			m_onHeap = true;
-			m_capacity = new_capacity;
+			m_capacity = newCapacity;
 		}
 		else
 		{
 			// Expand existing heap buffer
-			auto new_buffer = std::make_unique<char[]>( new_capacity );
+			auto newBuffer = std::make_unique<char[]>( newCapacity );
 			if ( m_size > 0 )
 			{
-				std::memcpy( new_buffer.get(), m_heapBuffer.get(), m_size );
+				std::memcpy( newBuffer.get(), m_heapBuffer.get(), m_size );
 			}
-			m_heapBuffer = std::move( new_buffer );
-			m_capacity = new_capacity;
+			m_heapBuffer = std::move( newBuffer );
+			m_capacity = newCapacity;
 		}
 	}
 

@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Stream operators (`operator<<`) for all numeric types optimized with `std::to_chars` implementation
 - Optimized capacity checks in `DynamicStringBuffer` append methods
+- SIMD optimizations (AVX2/SSE2) for string copy operations in `DynamicStringBuffer::append()`
 
 ### Deprecated
 
