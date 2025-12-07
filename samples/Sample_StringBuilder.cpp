@@ -509,5 +509,87 @@ int main()
 		std::cout << "\n";
 	}
 
+	//=====================================================================
+	// 15. Variadic append() - Batch operations
+	//=====================================================================
+	{
+		std::cout << "15. Variadic append() - Batch operations\n";
+		std::cout << "----------------------------------------\n";
+
+		// Traditional approach: Multiple append() calls
+		std::cout << "Traditional approach - chained append():\n";
+		{
+			auto lease = StringBuilderPool::lease();
+			auto builder = lease.create();
+
+			builder.append( "User " )
+				.append( 12345 )
+				.append( " (" )
+				.append( "Alice" )
+				.append( ") logged in at " )
+				.append( 1735000000 )
+				.append( " with score " )
+				.append( 99.5 )
+				.append( "%" );
+
+			std::cout << "  Result: " << lease.toString() << "\n";
+			std::cout << "  Note: 9 separate append() calls\n";
+			std::cout << "\n";
+		}
+
+		// Modern approach: Variadic append() - single call
+		std::cout << "Modern approach - variadic append():\n";
+		{
+			auto lease = StringBuilderPool::lease();
+			auto builder = lease.create();
+
+			builder.append( "User ", 12345, " (", "Alice", ") logged in at ",
+				1735000000, " with score ", 99.5, "%" );
+
+			std::cout << "  Result: " << lease.toString() << "\n";
+			std::cout << "  Note: Single append() call with multiple arguments\n";
+			std::cout << "\n";
+		}
+
+		// SQL query construction with variadic append()
+		std::cout << "SQL query construction:\n";
+		{
+			auto lease = StringBuilderPool::lease();
+			auto builder = lease.create();
+
+			std::string table = "users";
+			int minAge = 18;
+			std::string status = "active";
+
+			builder.append( "SELECT id, name, email FROM ", table,
+				" WHERE age >= ", minAge, " AND status = '", status, "'" );
+
+			std::cout << "  Query: " << lease.toString() << "\n";
+			std::cout << "  Note: Mixes string literals, variables, and numeric types\n";
+			std::cout << "\n";
+		}
+
+		// Comparison with stream operators
+		std::cout << "Comparison with stream operators:\n";
+		{
+			auto lease = StringBuilderPool::lease();
+			auto builder = lease.create();
+
+			// Using << operator
+			builder << "User " << 42 << ": " << "Bob" << " (age: " << 25 << ")";
+			std::string result1 = lease.toString();
+
+			// Using variadic append()
+			lease.buffer().clear();
+			builder.append( "User ", 42, ": ", "Bob", " (age: ", 25, ")" );
+			std::string result2 = lease.toString();
+
+			std::cout << "  Stream operator:   " << result1 << "\n";
+			std::cout << "  Variadic append(): " << result2 << "\n";
+		}
+
+		std::cout << "\n";
+	}
+
 	return 0;
 }
