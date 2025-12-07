@@ -1,24 +1,14 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
 ## [Unreleased]
 
 ### Added
 
-- Method chaining support for all `StringBuilder::append()` methods (now return `StringBuilder&`)
-- Numeric `append()` methods for `int8_t`, `uint8_t`, `int16_t`, `uint16_t`, `int32_t`, `uint32_t`, `int64_t`, `uint64_t`, `float`, and `double`
-- Variadic `append()` template overload for batch operations - append multiple arguments in a single call (supports strings, chars, and numeric types)
+- NIL
 
 ### Changed
 
-- Stream operators (`operator<<`) for all numeric types optimized with `std::to_chars` implementation
-- Optimized capacity checks in `DynamicStringBuffer` append methods
-- SIMD optimizations (AVX2/SSE2) for string copy operations in `DynamicStringBuffer::append()`
-- Growth factor increased from 1.5 to 2.0 for better reallocation performance
+- NIL
 
 ### Deprecated
 
@@ -35,6 +25,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 - NIL
+
+## [0.3.0] - 2025-12-07
+
+### Added
+
+- Method chaining support for all `StringBuilder::append()` methods (now return `StringBuilder&`)
+- Numeric `append()` methods for `int8_t`, `uint8_t`, `int16_t`, `uint16_t`, `int32_t`, `uint32_t`, `int64_t`, `uint64_t`, `float`, and `double`
+- Variadic `append()` template overload for batch operations - append multiple arguments in a single call (supports strings, chars, and numeric types)
+
+### Changed
+
+- Stream operators (`operator<<`) for all numeric types optimized with `std::to_chars` implementation
+- Optimized capacity checks in `DynamicStringBuffer` append methods
+- SIMD optimizations (AVX2/SSE2) for string copy operations in `DynamicStringBuffer::append()`
+- Growth factor increased from 1.5 to 2.0 for better reallocation performance
 
 ## [0.2.0] - 2025-12-03
 
