@@ -2169,4 +2169,126 @@ namespace nfx::string::test
 		EXPECT_EQ( result.back(), 'X' );
 	}
 #endif
+
+	//----------------------------------------------
+	// Growth factor validation
+	//----------------------------------------------
+
+	TEST( DynamicStringBufferGrowthFactor, ValidateGrowthFactor )
+	{
+		auto lease{ string::StringBuilderPool::lease() };
+		auto& buffer{ lease.buffer() };
+
+		size_t initialCapacity{ buffer.capacity() }; // Should be STACK_BUFFER_SIZE (256)
+
+		// Force heap allocation by exceeding stack buffer
+		std::string large( initialCapacity + 1, 'G' );
+		buffer.append( large );
+
+		// After first growth, capacity should be >= initial * 2.0 (GROWTH_FACTOR)
+		size_t expectedMinCapacity{ static_cast<size_t>( initialCapacity * 2.0 ) };
+		EXPECT_GE( buffer.capacity(), expectedMinCapacity );
+		EXPECT_EQ( buffer.size(), initialCapacity + 1 );
+	}
+
+	TEST( DynamicStringBufferGrowthFactor, MultipleGrowths )
+	{
+		auto lease{ string::StringBuilderPool::lease() };
+		auto& buffer{ lease.buffer() };
+
+		size_t initialCapacity{ buffer.capacity() };
+		std::vector<size_t> capacities;
+		capacities.push_back( initialCapacity );
+
+		// Trigger multiple growths
+		for ( int i{ 0 }; i < 5; ++i )
+		{
+			size_t currentCapacity{ buffer.capacity() };
+			std::string chunk( currentCapacity - buffer.size() + 10, 'M' );
+			buffer.append( chunk );
+
+			size_t newCapacity{ buffer.capacity() };
+			if ( newCapacity > currentCapacity )
+			{
+				capacities.push_back( newCapacity );
+			}
+		}
+
+		// Verify that each growth follows the 2.0x factor (GROWTH_FACTOR)
+		for ( size_t i{ 1 }; i < capacities.size(); ++i )
+		{
+			double growthRatio{ static_cast<double>( capacities[i] ) / capacities[i - 1] };
+			EXPECT_GE( growthRatio, 2.0 ); // At least 2.0x (GROWTH_FACTOR)
+			EXPECT_LE( growthRatio, 3.0 ); // At most 3x (reasonable upper bound)
+		}
+	}
+
+	TEST( DynamicStringBufferGrowthFactor, CompareWithNoHint )
+	{
+		// Without hint - relies on growth factor
+		auto lease1{ string::StringBuilderPool::lease() };
+		auto& buffer1{ lease1.buffer() };
+
+		size_t initialCapacity{ buffer1.capacity() };
+
+		// Add content that will trigger multiple reallocations
+		for ( int i{ 0 }; i < 100; ++i )
+		{
+			buffer1.append( "growth test " );
+		}
+
+		size_t finalCapacity1{ buffer1.capacity() };
+
+		// With hint - pre-allocated
+		auto lease2{ string::StringBuilderPool::lease( 1200 ) };
+		auto& buffer2{ lease2.buffer() };
+
+		for ( int i{ 0 }; i < 100; ++i )
+		{
+			buffer2.append( "growth test " );
+		}
+
+		size_t finalCapacity2{ buffer2.capacity() };
+
+		// Both should contain same content
+		EXPECT_EQ( buffer1.size(), buffer2.size() );
+		EXPECT_EQ( buffer1.toString(), buffer2.toString() );
+
+		// NoHint should have grown from initial capacity
+		EXPECT_GT( finalCapacity1, initialCapacity );
+
+		// WithHint should not have needed to grow (or minimal growth)
+		EXPECT_GE( finalCapacity2, 1200 );
+	}
+
+	TEST( DynamicStringBufferGrowthFactor, GrowthEfficiency )
+	{
+		auto lease{ string::StringBuilderPool::lease() };
+		auto& buffer{ lease.buffer() };
+
+		// Track number of reallocations
+		size_t reallocationCount{ 0 };
+		size_t lastCapacity{ buffer.capacity() };
+
+		// Add content gradually
+		for ( int i{ 0 }; i < 1000; ++i )
+		{
+			buffer.append( "test" );
+
+			size_t currentCapacity{ buffer.capacity() };
+			if ( currentCapacity > lastCapacity )
+			{
+				reallocationCount++;
+				lastCapacity = currentCapacity;
+			}
+		}
+
+		// With 2.0x growth factor (GROWTH_FACTOR), we should have fewer reallocations
+		// than with smaller factors (for same amount of data)
+		// 1000 * 4 bytes = 4000 bytes
+		// Starting from 256: 256 -> 512 -> 1024 -> 2048 -> 4096
+		// Expected ~4-5 reallocations
+		EXPECT_LE( reallocationCount, 10 ); // Should be efficient
+		EXPECT_EQ( buffer.size(), 4000 );
+	}
 } // namespace nfx::string::test

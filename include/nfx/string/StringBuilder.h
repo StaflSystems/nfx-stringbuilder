@@ -362,7 +362,7 @@ namespace nfx::string
 		static constexpr size_t STACK_BUFFER_SIZE = 256;
 
 		/** @brief Growth factor for heap allocation */
-		static constexpr auto GROWTH_FACTOR = 1.5;
+		static constexpr auto GROWTH_FACTOR = 2.0;
 
 		//----------------------------------------------
 		// Private members
