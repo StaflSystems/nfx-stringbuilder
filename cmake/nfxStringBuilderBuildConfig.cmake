@@ -69,7 +69,6 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 	else()
 		set(CMAKE_INSTALL_PREFIX "/usr/local/nfx" CACHE PATH "Installation directory" FORCE)
 	endif()
-	message(STATUS "Setting install prefix to '${CMAKE_INSTALL_PREFIX}'")
 endif()
 
 #----------------------------------------------

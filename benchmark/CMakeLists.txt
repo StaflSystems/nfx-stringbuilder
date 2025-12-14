@@ -103,3 +103,9 @@ foreach(benchmark_source ${benchmark_sources})
 		)
 	endif()
 endforeach()
+
+#----------------------------------------------
+# Comparative benchmarks
+#----------------------------------------------
+
+add_subdirectory(comparative)

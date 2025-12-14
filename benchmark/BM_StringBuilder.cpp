@@ -225,9 +225,8 @@ namespace nfx::string::benchmark
 	// Pool efficiency - rapid lease/return cycles
 	//----------------------------------------------
 
-	static void BM_StdString_RapidCycles( ::benchmark::State& state )
+	static void BM_StdString_RapidCycles_ColdStart( ::benchmark::State& state )
 	{
-		// Equivalent rapid string building without pooling
 		for ( auto _ : state )
 		{
 			for ( int i = 0; i < 10; ++i )
@@ -241,9 +240,25 @@ namespace nfx::string::benchmark
 		}
 	}
 
+	static void BM_StdString_RapidCycles_WarmStart( ::benchmark::State& state )
+	{
+		std::string result;
+		for ( auto _ : state )
+		{
+			for ( int i = 0; i < 10; ++i )
+			{
+				result.clear();
+				result = "Iteration ";
+				result += std::to_string( i );
+				result += ": ";
+				result += small_strings[i % small_strings.size()];
+				::benchmark::DoNotOptimize( result );
+			}
+		}
+	}
+
 	static void BM_StringBuilder_PoolEfficiency( ::benchmark::State& state )
 	{
-		// Test pool efficiency with rapid lease/return cycles
 		for ( auto _ : state )
 		{
 			for ( int i = 0; i < 10; ++i )
@@ -645,7 +660,11 @@ BENCHMARK( nfx::string::benchmark::BM_StringBuilder_LargeStrings )
 // Pool efficiency
 //----------------------------------------------
 
-BENCHMARK( nfx::string::benchmark::BM_StdString_RapidCycles )
+BENCHMARK( nfx::string::benchmark::BM_StdString_RapidCycles_ColdStart )
+	->MinTime( 1.0 )
+	->Unit( benchmark::kNanosecond );
+
+BENCHMARK( nfx::string::benchmark::BM_StdString_RapidCycles_WarmStart )
 	->MinTime( 1.0 )
 	->Unit( benchmark::kNanosecond );
 

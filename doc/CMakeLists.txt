@@ -230,6 +230,7 @@ if(Doxygen_FOUND)
 	doxygen_add_docs(nfx-stringbuilder-documentation
 		${NFX_STRINGBUILDER_INCLUDE_DIR}/nfx
 		${NFX_STRINGBUILDER_DIR}/benchmark/README.md
+		${NFX_STRINGBUILDER_DIR}/benchmark/comparative/README.md
 		${NFX_STRINGBUILDER_DIR}/CHANGELOG.md
 		${NFX_STRINGBUILDER_DIR}/README.md
 		${NFX_STRINGBUILDER_DIR}/TODO.md

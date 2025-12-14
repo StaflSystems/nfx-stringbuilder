@@ -40,73 +40,74 @@
 
 | Operation                         |   Linux GCC | Linux Clang | Windows MinGW GCC | Windows Clang-GNU-CLI | Windows Clang-MSVC-CLI | Windows MSVC |
 | --------------------------------- | ----------: | ----------: | ----------------: | --------------------: | ---------------------: | -----------: |
-| **BM_StdString_SmallStrings**     | **28.0 ns** |     33.9 ns |           53.5 ns |               57.6 ns |                50.6 ns |      63.8 ns |
-| **BM_StringStream_SmallStrings**  |  **147 ns** |      167 ns |            219 ns |                429 ns |                 381 ns |       473 ns |
-| **BM_StringBuilder_SmallStrings** |     41.4 ns | **40.9 ns** |           93.0 ns |               71.4 ns |                62.8 ns |      70.4 ns |
+| **BM_StdString_SmallStrings**     | **29.8 ns** |     35.6 ns |           69.8 ns |               77.9 ns |                53.3 ns |      56.0 ns |
+| **BM_StringStream_SmallStrings**  |  **159 ns** |      178 ns |            260 ns |                620 ns |                 426 ns |       433 ns |
+| **BM_StringBuilder_SmallStrings** |     45.3 ns | **41.0 ns** |            113 ns |               93.0 ns |                65.4 ns |      63.3 ns |
 
 ### Medium Strings
 
 | Operation                          |   Linux GCC | Linux Clang | Windows MinGW GCC | Windows Clang-GNU-CLI | Windows Clang-MSVC-CLI | Windows MSVC |
 | ---------------------------------- | ----------: | ----------: | ----------------: | --------------------: | ---------------------: | -----------: |
-| **BM_StdString_MediumStrings**     | **62.9 ns** |     72.7 ns |           1191 ns |                180 ns |                 166 ns |      1164 ns |
-| **BM_StringStream_MediumStrings**  |  **172 ns** |      197 ns |            228 ns |                704 ns |                 658 ns |      1842 ns |
-| **BM_StringBuilder_MediumStrings** |     67.7 ns | **57.7 ns** |            116 ns |                105 ns |                98.0 ns |       113 ns |
+| **BM_StdString_MediumStrings**     | **68.8 ns** |     77.3 ns |            181 ns |                232 ns |                 169 ns |      1044 ns |
+| **BM_StringStream_MediumStrings**  |  **190 ns** |      213 ns |            279 ns |                994 ns |                 717 ns |      1611 ns |
+| **BM_StringBuilder_MediumStrings** |     76.3 ns | **61.3 ns** |            135 ns |                136 ns |                96.2 ns |       101 ns |
 
 ### Large Strings
 
 | Operation                         |   Linux GCC | Linux Clang | Windows MinGW GCC | Windows Clang-GNU-CLI | Windows Clang-MSVC-CLI | Windows MSVC |
 | --------------------------------- | ----------: | ----------: | ----------------: | --------------------: | ---------------------: | -----------: |
-| **BM_StdString_LargeStrings**     | **68.5 ns** |     75.6 ns |            127 ns |                143 ns |                 138 ns |       140 ns |
-| **BM_StringStream_LargeStrings**  |  **197 ns** |      217 ns |            315 ns |                814 ns |                 729 ns |      2018 ns |
-| **BM_StringBuilder_LargeStrings** |     68.8 ns | **58.9 ns** |            111 ns |               92.5 ns |                91.2 ns |       113 ns |
+| **BM_StdString_LargeStrings**     | **81.5 ns** |     87.4 ns |            142 ns |                173 ns |                 137 ns |       124 ns |
+| **BM_StringStream_LargeStrings**  |  **213 ns** |      235 ns |            360 ns |               1001 ns |                 777 ns |      1683 ns |
+| **BM_StringBuilder_LargeStrings** |     67.4 ns | **62.8 ns** |            127 ns |                112 ns |                89.7 ns |      95.3 ns |
 
 ## Pool Efficiency
 
-| Operation                           |  Linux GCC | Linux Clang | Windows MinGW GCC | Windows Clang-GNU-CLI | Windows Clang-MSVC-CLI | Windows MSVC |
-| ----------------------------------- | ---------: | ----------: | ----------------: | --------------------: | ---------------------: | -----------: |
-| **BM_StdString_RapidCycles**        | **147 ns** |      165 ns |            352 ns |                516 ns |                 500 ns |       436 ns |
-| **BM_StringBuilder_PoolEfficiency** |     321 ns |  **280 ns** |            614 ns |                374 ns |                 373 ns |       380 ns |
+| Operation                              |   Linux GCC | Linux Clang | Windows MinGW GCC | Windows Clang-GNU-CLI | Windows Clang-MSVC-CLI | Windows MSVC |
+| -------------------------------------- | ----------: | ----------: | ----------------: | --------------------: | ---------------------: | -----------: |
+| **BM_StdString_RapidCycles_ColdStart** |  **156 ns** |      174 ns |            486 ns |                628 ns |                 486 ns |       469 ns |
+| **BM_StdString_RapidCycles_WarmStart** | **75.8 ns** |     67.8 ns |            112 ns |                157 ns |                 130 ns |       131 ns |
+| **BM_StringBuilder_PoolEfficiency**    |      335 ns |  **290 ns** |            687 ns |                439 ns |                 356 ns |       403 ns |
 
 ## Mixed Operations
 
 | Operation                            |   Linux GCC | Linux Clang | Windows MinGW GCC | Windows Clang-GNU-CLI | Windows Clang-MSVC-CLI | Windows MSVC |
 | ------------------------------------ | ----------: | ----------: | ----------------: | --------------------: | ---------------------: | -----------: |
-| **BM_StdString_MixedOperations**     | **77.5 ns** |     87.2 ns |            147 ns |                246 ns |                 246 ns |       250 ns |
-| **BM_StringStream_MixedOperations**  |  **415 ns** |      439 ns |            415 ns |               1609 ns |                1580 ns |      3119 ns |
-| **BM_StringBuilder_MixedOperations** |      206 ns |  **186 ns** |            304 ns |                296 ns |                 302 ns |       324 ns |
+| **BM_StdString_MixedOperations**     | **87.1 ns** |     95.4 ns |            182 ns |                282 ns |                 234 ns |       219 ns |
+| **BM_StringStream_MixedOperations**  |  **461 ns** |      477 ns |            469 ns |               1890 ns |                1616 ns |      2562 ns |
+| **BM_StringBuilder_MixedOperations** |      224 ns |  **186 ns** |            316 ns |                295 ns |                 270 ns |       255 ns |
 
 ## Capacity Hints
 
-| Operation                     | Linux GCC | Linux Clang | Windows MinGW GCC | Windows Clang-GNU-CLI | Windows Clang-MSVC-CLI | Windows MSVC |
-| ----------------------------- | --------: | ----------: | ----------------: | --------------------: | ---------------------: | -----------: |
-| **BM_StringBuilder_NoHint**   |   1828 ns | **1542 ns** |           2306 ns |               2612 ns |                2774 ns |      3094 ns |
-| **BM_StringBuilder_WithHint** |   1645 ns | **1380 ns** |           2087 ns |               2349 ns |                2461 ns |      2723 ns |
+| Operation                     |   Linux GCC | Linux Clang | Windows MinGW GCC | Windows Clang-GNU-CLI | Windows Clang-MSVC-CLI | Windows MSVC |
+| ----------------------------- | ----------: | ----------: | ----------------: | --------------------: | ---------------------: | -----------: |
+| **BM_StringBuilder_NoHint**   | **1941 ns** |     1542 ns |           2456 ns |               2696 ns |                2469 ns |      2437 ns |
+| **BM_StringBuilder_WithHint** | **1761 ns** |     1453 ns |           2164 ns |               2296 ns |                2194 ns |      2236 ns |
 
 ## format() Method
 
 | Operation                             |   Linux GCC | Linux Clang | Windows MinGW GCC | Windows Clang-GNU-CLI | Windows Clang-MSVC-CLI | Windows MSVC |
 | ------------------------------------- | ----------: | ----------: | ----------------: | --------------------: | ---------------------: | -----------: |
-| **BM_StdFormat_ComplexFormatting**    | **1870 ns** |     1896 ns |          11893 ns |               3075 ns |                3298 ns |      3468 ns |
-| **BM_StringBuilder_FormatMethod**     | **2060 ns** |     2148 ns |           2738 ns |               2950 ns |                2868 ns |      3293 ns |
-| **BM_StringBuilder_ManualFormatting** |      644 ns |  **597 ns** |           1428 ns |                839 ns |                 892 ns |      1025 ns |
+| **BM_StdFormat_ComplexFormatting**    | **2116 ns** |     2084 ns |           3073 ns |               3162 ns |                2859 ns |      3093 ns |
+| **BM_StringBuilder_FormatMethod**     | **2325 ns** |     2396 ns |           2857 ns |               2943 ns |                2622 ns |      2876 ns |
+| **BM_StringBuilder_ManualFormatting** |      699 ns |  **625 ns** |           1476 ns |                817 ns |                 810 ns |       813 ns |
 
 ## Variadic append()
 
 | Operation                                        |  Linux GCC | Linux Clang | Windows MinGW GCC | Windows Clang-GNU-CLI | Windows Clang-MSVC-CLI | Windows MSVC |
 | ------------------------------------------------ | ---------: | ----------: | ----------------: | --------------------: | ---------------------: | -----------: |
-| **BM_StringBuilder_MultipleAppends**             |    72.5 ns | **60.2 ns** |            110 ns |               83.4 ns |                96.7 ns |       112 ns |
-| **BM_StringBuilder_VariadicAppend**              |    71.7 ns | **62.9 ns** |            110 ns |               84.8 ns |                97.6 ns |       108 ns |
-| **BM_StringBuilder_MultipleAppends_WithNumeric** |     111 ns |  **100 ns** |            230 ns |                121 ns |                 129 ns |       154 ns |
-| **BM_StringBuilder_VariadicAppend_WithNumeric**  | **112 ns** |      111 ns |            225 ns |                139 ns |                 151 ns |       160 ns |
+| **BM_StringBuilder_MultipleAppends**             |    69.4 ns | **63.9 ns** |            113 ns |               86.4 ns |                83.7 ns |      81.6 ns |
+| **BM_StringBuilder_VariadicAppend**              |    71.0 ns | **63.7 ns** |            111 ns |               84.3 ns |                84.0 ns |      83.8 ns |
+| **BM_StringBuilder_MultipleAppends_WithNumeric** |     112 ns | **96.2 ns** |            231 ns |                111 ns |                 117 ns |       120 ns |
+| **BM_StringBuilder_VariadicAppend_WithNumeric**  | **111 ns** |      109 ns |            227 ns |                128 ns |                 137 ns |       132 ns |
 
 ## Advanced
 
-| Operation                           | Linux GCC | Linux Clang | Windows MinGW GCC | Windows Clang-GNU-CLI | Windows Clang-MSVC-CLI | Windows MSVC |
-| ----------------------------------- | --------: | ----------: | ----------------: | --------------------: | ---------------------: | -----------: |
-| **BM_StringBuilder_BufferReuse**    |    692 ns |  **586 ns** |            867 ns |                866 ns |                 981 ns |      1121 ns |
-| **BM_StringBuilder_ZeroAlloc**      |   60.1 ns | **53.6 ns** |           86.0 ns |               63.9 ns |                70.0 ns |      92.4 ns |
-| **BM_StringBuilder_MemoryPressure** |   1378 ns | **1238 ns** |           2074 ns |               2220 ns |                2517 ns |      2855 ns |
+| Operation                           |   Linux GCC | Linux Clang | Windows MinGW GCC | Windows Clang-GNU-CLI | Windows Clang-MSVC-CLI | Windows MSVC |
+| ----------------------------------- | ----------: | ----------: | ----------------: | --------------------: | ---------------------: | -----------: |
+| **BM_StringBuilder_BufferReuse**    |      724 ns |  **544 ns** |            869 ns |                802 ns |                 888 ns |       907 ns |
+| **BM_StringBuilder_ZeroAlloc**      |     63.6 ns | **51.7 ns** |           86.3 ns |               56.1 ns |                59.8 ns |      68.0 ns |
+| **BM_StringBuilder_MemoryPressure** | **1457 ns** |     1433 ns |           2075 ns |               1916 ns |                2222 ns |      1981 ns |
 
 ---
 
-_Updated on December 07, 2025_
+_Updated on December 14, 2025_

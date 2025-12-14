@@ -29,6 +29,7 @@
  *          including basic building, stream operators, iterator usage, and performance monitoring
  */
 
+#include <cstring>
 #include <iostream>
 #include <iomanip>
 #include <string>

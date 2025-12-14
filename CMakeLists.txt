@@ -35,24 +35,25 @@ enable_testing()
 #----------------------------------------------
 
 # --- Library build types ---
-option(NFX_STRINGBUILDER_BUILD_STATIC        "Build static library"               OFF)
-option(NFX_STRINGBUILDER_BUILD_SHARED        "Build shared library"               OFF)
+option(NFX_STRINGBUILDER_BUILD_STATIC                 "Build static library"               OFF)
+option(NFX_STRINGBUILDER_BUILD_SHARED                 "Build shared library"               OFF)
 
 # --- Build components ---
-option(NFX_STRINGBUILDER_BUILD_TESTS         "Build tests"                        OFF)
-option(NFX_STRINGBUILDER_BUILD_SAMPLES       "Build samples"                      OFF)
-option(NFX_STRINGBUILDER_BUILD_BENCHMARKS    "Build benchmarks"                   OFF)
-option(NFX_STRINGBUILDER_BUILD_DOCUMENTATION "Build Doxygen documentation"        OFF)
+option(NFX_STRINGBUILDER_BUILD_TESTS                  "Build tests"                        OFF)
+option(NFX_STRINGBUILDER_BUILD_SAMPLES                "Build samples"                      OFF)
+option(NFX_STRINGBUILDER_BUILD_BENCHMARKS             "Build benchmarks"                   OFF)
+option(NFX_STRINGBUILDER_BUILD_COMPARATIVE_BENCHMARKS "Build comparative benchmarks"       OFF)
+option(NFX_STRINGBUILDER_BUILD_DOCUMENTATION          "Build Doxygen documentation"        OFF)
 
 # --- Installation ---
-option(NFX_STRINGBUILDER_INSTALL_PROJECT     "Install project"                    OFF)
+option(NFX_STRINGBUILDER_INSTALL_PROJECT              "Install project"                    OFF)
 
 # --- Packaging ---
-option(NFX_STRINGBUILDER_PACKAGE_SOURCE      "Enable source package generation"   OFF)
-option(NFX_STRINGBUILDER_PACKAGE_ARCHIVE     "Enable TGZ/ZIP package generation"  OFF)
-option(NFX_STRINGBUILDER_PACKAGE_DEB         "Enable DEB package generation"      OFF)
-option(NFX_STRINGBUILDER_PACKAGE_RPM         "Enable RPM package generation"      OFF)
-option(NFX_STRINGBUILDER_PACKAGE_WIX         "Enable WiX Windows installer (MSI)" OFF)
+option(NFX_STRINGBUILDER_PACKAGE_SOURCE               "Enable source package generation"   OFF)
+option(NFX_STRINGBUILDER_PACKAGE_ARCHIVE              "Enable TGZ/ZIP package generation"  OFF)
+option(NFX_STRINGBUILDER_PACKAGE_DEB                  "Enable DEB package generation"      OFF)
+option(NFX_STRINGBUILDER_PACKAGE_RPM                  "Enable RPM package generation"      OFF)
+option(NFX_STRINGBUILDER_PACKAGE_WIX                  "Enable WiX Windows installer (MSI)" OFF)
 
 #----------------------------------------------
 # CMake modules configuration

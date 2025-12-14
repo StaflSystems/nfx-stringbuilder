@@ -10,7 +10,7 @@
 
 [![Linux GCC](https://img.shields.io/github/actions/workflow/status/nfx-libs/nfx-stringbuilder/build-linux-gcc.yml?branch=main&label=Linux%20GCC&style=flat-square)](https://github.com/nfx-libs/nfx-stringbuilder/actions/workflows/build-linux-gcc.yml) [![Linux Clang](https://img.shields.io/github/actions/workflow/status/nfx-libs/nfx-stringbuilder/build-linux-clang.yml?branch=main&label=Linux%20Clang&style=flat-square)](https://github.com/nfx-libs/nfx-stringbuilder/actions/workflows/build-linux-clang.yml) [![Windows MinGW](https://img.shields.io/github/actions/workflow/status/nfx-libs/nfx-stringbuilder/build-windows-mingw.yml?branch=main&label=Windows%20MinGW&style=flat-square)](https://github.com/nfx-libs/nfx-stringbuilder/actions/workflows/build-windows-mingw.yml) [![Windows MSVC](https://img.shields.io/github/actions/workflow/status/nfx-libs/nfx-stringbuilder/build-windows-msvc.yml?branch=main&label=Windows%20MSVC&style=flat-square)](https://github.com/nfx-libs/nfx-stringbuilder/actions/workflows/build-windows-msvc.yml) [![CodeQL](https://img.shields.io/github/actions/workflow/status/nfx-libs/nfx-stringbuilder/codeql.yml?branch=main&label=CodeQL&style=flat-square)](https://github.com/nfx-libs/nfx-stringbuilder/actions/workflows/codeql.yml)
 
-> A cross-platform C++20 library for zero-allocation string building with thread-safe pooling and Small Buffer Optimization for high performance
+> A cross-platform C++20 string builder with three-tier memory pooling, thread-local caching, and Small Buffer Optimization
 
 ## Overview
 
@@ -31,7 +31,7 @@
 - **Tier 3: Dynamic Allocation**
   - Fallback when pools are exhausted
   - Pre-sized buffers for optimal performance
-  - Automatic capacity management with 1.5x growth factor
+  - Automatic capacity management with 2.x growth factor
 
 ### 🛠️ Rich String Building Interface
 
@@ -65,7 +65,7 @@
 - **Small Buffer Optimization (SBO)**: 256-byte stack buffer eliminates heap allocations for most strings
 - **Zero-Copy Operations**: `string_view` access without allocation
 - **High Cache Hit Rates**: 90%+ pool hit rate in typical workloads
-- **Sub-Microsecond Operations**: Faster than `std::string` and `std::ostringstream`
+- **Sub-Microsecond Operations**: Competitive with {fmt} and Abseil
 - **Memory Efficiency**: Automatic buffer recycling and size management
 
 ### 🌍 Cross-Platform Support
@@ -88,25 +88,26 @@
 ### CMake Integration
 
 ```cmake
-# Build options
-option(NFX_STRINGBUILDER_BUILD_STATIC        "Build static library"              OFF)
-option(NFX_STRINGBUILDER_BUILD_SHARED        "Build shared library"              OFF)
+# --- Library build types ---
+option(NFX_STRINGBUILDER_BUILD_STATIC                 "Build static library"               OFF)
+option(NFX_STRINGBUILDER_BUILD_SHARED                 "Build shared library"               OFF)
 
-# Development options
-option(NFX_STRINGBUILDER_BUILD_TESTS         "Build tests"                       OFF)
-option(NFX_STRINGBUILDER_BUILD_SAMPLES       "Build samples"                     OFF)
-option(NFX_STRINGBUILDER_BUILD_BENCHMARKS    "Build benchmarks"                  OFF)
-option(NFX_STRINGBUILDER_BUILD_DOCUMENTATION "Build Doxygen documentation"       OFF)
+# --- Build components ---
+option(NFX_STRINGBUILDER_BUILD_TESTS                  "Build tests"                        OFF)
+option(NFX_STRINGBUILDER_BUILD_SAMPLES                "Build samples"                      OFF)
+option(NFX_STRINGBUILDER_BUILD_BENCHMARKS             "Build benchmarks"                   OFF)
+option(NFX_STRINGBUILDER_BUILD_COMPARATIVE_BENCHMARKS "Build comparative benchmarks"       OFF)
+option(NFX_STRINGBUILDER_BUILD_DOCUMENTATION          "Build Doxygen documentation"        OFF)
 
-# Installation
-option(NFX_STRINGBUILDER_INSTALL_PROJECT     "Install project"                   OFF)
+# --- Installation ---
+option(NFX_STRINGBUILDER_INSTALL_PROJECT              "Install project"                    OFF)
 
-# Packaging
-option(NFX_STRINGBUILDER_PACKAGE_SOURCE      "Enable source package generation"  OFF)
-option(NFX_STRINGBUILDER_PACKAGE_ARCHIVE     "Enable TGZ/ZIP package generation" OFF)
-option(NFX_STRINGBUILDER_PACKAGE_DEB         "Enable DEB package generation"     OFF)
-option(NFX_STRINGBUILDER_PACKAGE_RPM         "Enable RPM package generation"     OFF)
-option(NFX_STRINGBUILDER_PACKAGE_WIX         "Enable WiX MSI installer"          OFF)
+# --- Packaging ---
+option(NFX_STRINGBUILDER_PACKAGE_SOURCE               "Enable source package generation"   OFF)
+option(NFX_STRINGBUILDER_PACKAGE_ARCHIVE              "Enable TGZ/ZIP package generation"  OFF)
+option(NFX_STRINGBUILDER_PACKAGE_DEB                  "Enable DEB package generation"      OFF)
+option(NFX_STRINGBUILDER_PACKAGE_RPM                  "Enable RPM package generation"      OFF)
+option(NFX_STRINGBUILDER_PACKAGE_WIX                  "Enable WiX Windows installer (MSI)" OFF)
 ```
 
 ### Using in Your Project
@@ -723,17 +724,20 @@ tar -xzf nfx-stringbuilder-*-Linux.tar.gz -C /usr/local/
 
 ```
 nfx-stringbuilder/
-├── benchmark/             # Performance benchmarks with Google Benchmark
-├── cmake/                 # CMake modules and configuration
-├── include/nfx/           # Public headers
-├── samples/               # Example usage and demonstrations
-├── src/                   # Implementation files
-└── test/                  # Comprehensive unit tests with GoogleTest
+├── benchmark/     # Performance benchmarks with Google Benchmark
+├── cmake/         # CMake modules and configuration
+├── include/nfx/   # Public headers
+├── samples/       # Example usage and demonstrations
+├── src/           # Implementation files
+└── test/          # Comprehensive unit tests with GoogleTest
 ```
 
 ## Performance
 
-For detailed performance metrics and benchmarks, see the [benchmark documentation](benchmark/README.md).
+For detailed performance metrics and benchmarks, see:
+
+- [Standard benchmarks](benchmark/README.md)
+- [Comparative benchmarks](benchmark/comparative/README.md) - Performance comparison vs {fmt} and Abseil
 
 ## Roadmap
 
@@ -758,4 +762,4 @@ All dependencies are automatically fetched via CMake FetchContent when building 
 
 ---
 
-_Updated on December 07, 2025_
+_Updated on December 14, 2025_
