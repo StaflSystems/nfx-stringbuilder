@@ -94,110 +94,200 @@ namespace nfx::string
 
 	inline StringBuilder& StringBuilder::append( std::int8_t value )
 	{
-		char temp[8]; // -128 to 127 needs max 4 chars + null
-		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), static_cast<int>( value ) );
+		// -128 to 127 needs max 4 chars
+		size_t oldSize = m_buffer.size();
+		m_buffer.resize( oldSize + 4 );
+
+		char* dest = m_buffer.data() + oldSize;
+		auto [ptr, ec] = std::to_chars( dest, dest + 4, static_cast<int>( value ) );
+
 		if ( ec == std::errc() )
 		{
-			m_buffer.append( std::string_view( temp, ptr - temp ) );
+			m_buffer.resize( oldSize + ( ptr - dest ) );
+		}
+		else
+		{
+			m_buffer.resize( oldSize );
 		}
 		return *this;
 	}
 
 	inline StringBuilder& StringBuilder::append( std::uint8_t value )
 	{
-		char temp[8]; // 0 to 255 needs max 3 chars + null
-		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), static_cast<unsigned>( value ) );
+		// 0 to 255 needs max 3 chars
+		size_t oldSize = m_buffer.size();
+		m_buffer.resize( oldSize + 3 );
+
+		char* dest = m_buffer.data() + oldSize;
+		auto [ptr, ec] = std::to_chars( dest, dest + 3, static_cast<unsigned>( value ) );
+
 		if ( ec == std::errc() )
 		{
-			m_buffer.append( std::string_view( temp, ptr - temp ) );
+			m_buffer.resize( oldSize + ( ptr - dest ) );
+		}
+		else
+		{
+			m_buffer.resize( oldSize );
 		}
 		return *this;
 	}
 
 	inline StringBuilder& StringBuilder::append( std::int16_t value )
 	{
-		char temp[8]; // -32768 to 32767 needs max 6 chars + null
-		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
+		// -32768 to 32767 needs max 6 chars
+		size_t oldSize = m_buffer.size();
+		m_buffer.resize( oldSize + 6 );
+
+		char* dest = m_buffer.data() + oldSize;
+		auto [ptr, ec] = std::to_chars( dest, dest + 6, value );
+
 		if ( ec == std::errc() )
 		{
-			m_buffer.append( std::string_view( temp, ptr - temp ) );
+			m_buffer.resize( oldSize + ( ptr - dest ) );
+		}
+		else
+		{
+			m_buffer.resize( oldSize );
 		}
 		return *this;
 	}
 
 	inline StringBuilder& StringBuilder::append( std::uint16_t value )
 	{
-		char temp[8]; // 0 to 65535 needs max 5 chars + null
-		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
+		// 0 to 65535 needs max 5 chars
+		size_t oldSize = m_buffer.size();
+		m_buffer.resize( oldSize + 5 );
+
+		char* dest = m_buffer.data() + oldSize;
+		auto [ptr, ec] = std::to_chars( dest, dest + 5, value );
+
 		if ( ec == std::errc() )
 		{
-			m_buffer.append( std::string_view( temp, ptr - temp ) );
+			m_buffer.resize( oldSize + ( ptr - dest ) );
+		}
+		else
+		{
+			m_buffer.resize( oldSize );
 		}
 		return *this;
 	}
 
 	inline StringBuilder& StringBuilder::append( std::int32_t value )
 	{
-		char temp[16]; // -2147483648 needs 11 chars + null terminator
-		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
+		// -2147483648 needs max 11 chars
+		size_t oldSize = m_buffer.size();
+		m_buffer.resize( oldSize + 11 );
+
+		char* dest = m_buffer.data() + oldSize;
+		auto [ptr, ec] = std::to_chars( dest, dest + 11, value );
+
 		if ( ec == std::errc() )
 		{
-			m_buffer.append( std::string_view( temp, ptr - temp ) );
+			m_buffer.resize( oldSize + ( ptr - dest ) );
+		}
+		else
+		{
+			m_buffer.resize( oldSize );
 		}
 		return *this;
 	}
 
 	inline StringBuilder& StringBuilder::append( std::uint32_t value )
 	{
-		char temp[16]; // 4294967295 needs 10 chars + null terminator
-		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
+		// 4294967295 needs max 10 chars
+		size_t oldSize = m_buffer.size();
+		m_buffer.resize( oldSize + 10 );
+
+		char* dest = m_buffer.data() + oldSize;
+		auto [ptr, ec] = std::to_chars( dest, dest + 10, value );
+
 		if ( ec == std::errc() )
 		{
-			m_buffer.append( std::string_view( temp, ptr - temp ) );
+			m_buffer.resize( oldSize + ( ptr - dest ) );
+		}
+		else
+		{
+			m_buffer.resize( oldSize );
 		}
 		return *this;
 	}
 
 	inline StringBuilder& StringBuilder::append( std::int64_t value )
 	{
-		char temp[24]; // -9223372036854775808 needs 20 chars + null terminator
-		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
+		// -9223372036854775808 needs max 20 chars
+		size_t oldSize = m_buffer.size();
+		m_buffer.resize( oldSize + 20 );
+
+		char* dest = m_buffer.data() + oldSize;
+		auto [ptr, ec] = std::to_chars( dest, dest + 20, value );
+
 		if ( ec == std::errc() )
 		{
-			m_buffer.append( std::string_view( temp, ptr - temp ) );
+			m_buffer.resize( oldSize + ( ptr - dest ) );
+		}
+		else
+		{
+			m_buffer.resize( oldSize );
 		}
 		return *this;
 	}
 
 	inline StringBuilder& StringBuilder::append( std::uint64_t value )
 	{
-		char temp[24]; // 18446744073709551615 needs 20 chars + null terminator
-		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
+		// 18446744073709551615 needs max 20 chars
+		size_t oldSize = m_buffer.size();
+		m_buffer.resize( oldSize + 20 );
+
+		char* dest = m_buffer.data() + oldSize;
+		auto [ptr, ec] = std::to_chars( dest, dest + 20, value );
+
 		if ( ec == std::errc() )
 		{
-			m_buffer.append( std::string_view( temp, ptr - temp ) );
+			m_buffer.resize( oldSize + ( ptr - dest ) );
+		}
+		else
+		{
+			m_buffer.resize( oldSize );
 		}
 		return *this;
 	}
 
 	inline StringBuilder& StringBuilder::append( float value )
 	{
-		char temp[32]; // Sufficient for scientific notation and special values
-		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
+		// Sufficient for scientific notation and special values
+		size_t oldSize = m_buffer.size();
+		m_buffer.resize( oldSize + 32 );
+
+		char* dest = m_buffer.data() + oldSize;
+		auto [ptr, ec] = std::to_chars( dest, dest + 32, value );
+
 		if ( ec == std::errc() )
 		{
-			m_buffer.append( std::string_view( temp, ptr - temp ) );
+			m_buffer.resize( oldSize + ( ptr - dest ) );
+		}
+		else
+		{
+			m_buffer.resize( oldSize );
 		}
 		return *this;
 	}
 
 	inline StringBuilder& StringBuilder::append( double value )
 	{
-		char temp[32]; // Sufficient for scientific notation and special values
-		auto [ptr, ec] = std::to_chars( temp, temp + sizeof( temp ), value );
+		// Sufficient for scientific notation and special values
+		size_t oldSize = m_buffer.size();
+		m_buffer.resize( oldSize + 32 );
+
+		char* dest = m_buffer.data() + oldSize;
+		auto [ptr, ec] = std::to_chars( dest, dest + 32, value );
+
 		if ( ec == std::errc() )
 		{
-			m_buffer.append( std::string_view( temp, ptr - temp ) );
+			m_buffer.resize( oldSize + ( ptr - dest ) );
+		}
+		else
+		{
+			m_buffer.resize( oldSize );
 		}
 		return *this;
 	}

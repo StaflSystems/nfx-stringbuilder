@@ -8,7 +8,7 @@
 
 ### Changed
 
-- NIL
+- Optimized numeric `append()` methods with direct buffer writing strategy
 
 ### Deprecated
 
