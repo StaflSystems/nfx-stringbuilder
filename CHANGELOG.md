@@ -9,6 +9,13 @@
 ### Changed
 
 - Optimized numeric `append()` methods with direct buffer writing strategy
+- Optimized `DynamicStringBuffer::append(std::string_view)` with progressive SIMD strategy
+  - Added fast path for small strings (≤16 bytes) marked as `[[likely]]` using direct `memcpy`
+  - Implemented unrolled SIMD loops for large copies: 128-byte AVX2 loop (4× 32-byte vectors), 64-byte SSE2 loop (4× 16-byte vectors)
+  - Progressive thresholds optimize for different string sizes
+- Adjusted growth strategy in `ensureCapacity()`
+  - Changed growth threshold from 4KB to 8KB
+  - Growth factor: 2.0× below 8KB (fast scaling), 1.5× above 8KB
 
 ### Deprecated
 

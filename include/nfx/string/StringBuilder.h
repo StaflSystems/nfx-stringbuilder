@@ -391,7 +391,7 @@ namespace nfx::string
 		 * @brief Ensures buffer has at least the specified capacity
 		 * @param neededCapacity Minimum required capacity
 		 */
-		void ensureCapacity( size_t needed_capacity );
+		void ensureCapacity( size_t neededCapacity );
 
 		/**
 		 * @brief Returns pointer to current buffer (stack or heap)

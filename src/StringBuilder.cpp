@@ -236,7 +236,9 @@ namespace nfx::string
 			return;
 		}
 
-		const size_t newSize = m_size + str.size();
+		const size_t len = str.size();
+		const size_t newSize = m_size + len;
+
 		if ( newSize > m_capacity ) [[unlikely]]
 		{
 			ensureCapacity( newSize );
@@ -244,10 +246,55 @@ namespace nfx::string
 
 		char* dest = currentBuffer() + m_size;
 		const char* src = str.data();
-		size_t len = str.size();
+
+		// Fast path for small string
+		if ( len <= 16 ) [[likely]]
+		{
+			std::memcpy( dest, src, len );
+		}
 
 #if defined( __AVX2__ ) || ( defined( _MSC_VER ) && defined( __AVX2__ ) )
-		if ( len >= 64 )
+		// For very large copies, use unrolled AVX2 loop
+		else if ( len >= 128 )
+		{
+			size_t remaining = len;
+
+			// Process 128 bytes (4× AVX2 vectors) per iteration
+			while ( remaining >= 128 )
+			{
+				__m256i chunk0 = _mm256_loadu_si256( reinterpret_cast<const __m256i*>( src + 0 ) );
+				__m256i chunk1 = _mm256_loadu_si256( reinterpret_cast<const __m256i*>( src + 32 ) );
+				__m256i chunk2 = _mm256_loadu_si256( reinterpret_cast<const __m256i*>( src + 64 ) );
+				__m256i chunk3 = _mm256_loadu_si256( reinterpret_cast<const __m256i*>( src + 96 ) );
+
+				_mm256_storeu_si256( reinterpret_cast<__m256i*>( dest + 0 ), chunk0 );
+				_mm256_storeu_si256( reinterpret_cast<__m256i*>( dest + 32 ), chunk1 );
+				_mm256_storeu_si256( reinterpret_cast<__m256i*>( dest + 64 ), chunk2 );
+				_mm256_storeu_si256( reinterpret_cast<__m256i*>( dest + 96 ), chunk3 );
+
+				src += 128;
+				dest += 128;
+				remaining -= 128;
+			}
+
+			// Handle remaining 32-byte chunks
+			while ( remaining >= 32 )
+			{
+				__m256i chunk = _mm256_loadu_si256( reinterpret_cast<const __m256i*>( src ) );
+				_mm256_storeu_si256( reinterpret_cast<__m256i*>( dest ), chunk );
+				src += 32;
+				dest += 32;
+				remaining -= 32;
+			}
+
+			// Handle tail
+			if ( remaining > 0 )
+			{
+				std::memcpy( dest, src, remaining );
+			}
+		}
+		// Medium-sized copies: single AVX2 vector loop
+		else if ( len >= 32 )
 		{
 			size_t remaining = len;
 			while ( remaining >= 32 )
@@ -263,9 +310,46 @@ namespace nfx::string
 				std::memcpy( dest, src, remaining );
 			}
 		}
-		else
 #elif defined( __SSE2__ ) || ( defined( _MSC_VER ) && ( defined( _M_X64 ) || defined( _M_IX86 ) ) )
-		if ( len >= 64 )
+		// SSE2 path for systems without AVX2
+		else if ( len >= 64 )
+		{
+			size_t remaining = len;
+
+			// Unrolled SSE2 loop for larger copies
+			while ( remaining >= 64 )
+			{
+				__m128i chunk0 = _mm_loadu_si128( reinterpret_cast<const __m128i*>( src + 0 ) );
+				__m128i chunk1 = _mm_loadu_si128( reinterpret_cast<const __m128i*>( src + 16 ) );
+				__m128i chunk2 = _mm_loadu_si128( reinterpret_cast<const __m128i*>( src + 32 ) );
+				__m128i chunk3 = _mm_loadu_si128( reinterpret_cast<const __m128i*>( src + 48 ) );
+
+				_mm_storeu_si128( reinterpret_cast<__m128i*>( dest + 0 ), chunk0 );
+				_mm_storeu_si128( reinterpret_cast<__m128i*>( dest + 16 ), chunk1 );
+				_mm_storeu_si128( reinterpret_cast<__m128i*>( dest + 32 ), chunk2 );
+				_mm_storeu_si128( reinterpret_cast<__m128i*>( dest + 48 ), chunk3 );
+
+				src += 64;
+				dest += 64;
+				remaining -= 64;
+			}
+
+			// Handle remaining 16-byte chunks
+			while ( remaining >= 16 )
+			{
+				__m128i chunk = _mm_loadu_si128( reinterpret_cast<const __m128i*>( src ) );
+				_mm_storeu_si128( reinterpret_cast<__m128i*>( dest ), chunk );
+				src += 16;
+				dest += 16;
+				remaining -= 16;
+			}
+
+			if ( remaining > 0 )
+			{
+				std::memcpy( dest, src, remaining );
+			}
+		}
+		else if ( len >= 16 )
 		{
 			size_t remaining = len;
 			while ( remaining >= 16 )
@@ -281,8 +365,8 @@ namespace nfx::string
 				std::memcpy( dest, src, remaining );
 			}
 		}
-		else
 #endif
+		else
 		{
 			std::memcpy( dest, src, len );
 		}
@@ -309,8 +393,7 @@ namespace nfx::string
 		{
 			ensureCapacity( m_size + 1 );
 		}
-		char* buf = m_onHeap ? m_heapBuffer.get() : m_stackBuffer;
-		buf[m_size++] = c;
+		currentBuffer()[m_size++] = c;
 	}
 
 	//----------------------------------------------
@@ -355,16 +438,22 @@ namespace nfx::string
 	// Private methods
 	//----------------------------------------------
 
-	void DynamicStringBuffer::ensureCapacity( size_t needed_capacity )
+	void DynamicStringBuffer::ensureCapacity( size_t neededCapacity )
 	{
-		if ( needed_capacity <= m_capacity )
+		if ( neededCapacity <= m_capacity )
 		{
 			return;
 		}
 
-		// Calculate new capacity with growth factor
-		size_t newCapacity = std::max( needed_capacity,
-			static_cast<size_t>( m_capacity * GROWTH_FACTOR ) );
+		size_t newCapacity;
+		if ( m_capacity < 8192 )
+		{
+			newCapacity = std::max( neededCapacity, static_cast<size_t>( m_capacity * GROWTH_FACTOR ) );
+		}
+		else
+		{
+			newCapacity = std::max( neededCapacity, static_cast<size_t>( m_capacity + m_capacity / GROWTH_FACTOR ) );
+		}
 
 		if ( !m_onHeap && newCapacity <= STACK_BUFFER_SIZE )
 		{
