@@ -25,55 +25,96 @@
 /**
  * @file StringBuilder.inl
  * @brief Inline method implementations for StringBuilder
- * @details High-performance inline implementations for string builder pooling infrastructure
+ * @details High-performance inline implementations for StringBuilder with SBO
  */
 
-#include <charconv>
+#include <cstring>
 #include <iterator>
 #include <utility>
 
 namespace nfx::string
 {
 	//=====================================================================
+	// Internal constants for numeric conversions
+	//=====================================================================
+
+	namespace
+	{
+		constexpr size_t INT8_MAX_DIGITS = 4;	 // -128 to 127: max 4 chars
+		constexpr size_t UINT8_MAX_DIGITS = 3;	 // 0 to 255: max 3 chars
+		constexpr size_t INT16_MAX_DIGITS = 6;	 // -32768 to 32767: max 6 chars
+		constexpr size_t UINT16_MAX_DIGITS = 5;	 // 0 to 65535: max 5 chars
+		constexpr size_t INT32_MAX_DIGITS = 11;	 // -2147483648: max 11 chars
+		constexpr size_t UINT32_MAX_DIGITS = 10; // 4294967295: max 10 chars
+		constexpr size_t INT64_MAX_DIGITS = 20;	 // -9223372036854775808: max 20 chars
+		constexpr size_t UINT64_MAX_DIGITS = 20; // 18446744073709551615: max 20 chars
+		constexpr size_t FLOAT_MAX_CHARS = 15;	 // -3.40282347e+38: max 15 chars
+		constexpr size_t DOUBLE_MAX_CHARS = 24;	 // -1.7976931348623157e+308: max 24 chars
+	} // anonymous namespace
+
+	//=====================================================================
 	// StringBuilder class
 	//=====================================================================
 
 	//----------------------------------------------
-	// Construction
+	// Capacity and size information
 	//----------------------------------------------
 
-	inline StringBuilder::StringBuilder( DynamicStringBuffer& buffer )
-		: m_buffer{ buffer }
+	inline size_t StringBuilder::size() const noexcept
 	{
+		return m_size;
+	}
+
+	inline size_t StringBuilder::capacity() const noexcept
+	{
+		return m_capacity;
+	}
+
+	inline bool StringBuilder::isEmpty() const noexcept
+	{
+		return m_size == 0;
 	}
 
 	//----------------------------------------------
-	// Array access operators
+	// Data access
 	//----------------------------------------------
+
+	inline char* StringBuilder::data() noexcept
+	{
+		return currentBuffer();
+	}
+
+	inline const char* StringBuilder::data() const noexcept
+	{
+		return currentBuffer();
+	}
 
 	inline char& StringBuilder::operator[]( size_t index )
 	{
-		return m_buffer[index];
+		return currentBuffer()[index];
 	}
 
 	inline const char& StringBuilder::operator[]( size_t index ) const
 	{
-		return m_buffer[index];
+		return currentBuffer()[index];
 	}
 
 	//----------------------------------------------
-	// String append operations
+	// Buffer management
 	//----------------------------------------------
 
-	inline StringBuilder& StringBuilder::append( std::string_view str )
+	inline void StringBuilder::clear() noexcept
 	{
-		m_buffer.append( str );
-		return *this;
+		m_size = 0;
 	}
+
+	//----------------------------------------------
+	// Content manipulation
+	//----------------------------------------------
 
 	inline StringBuilder& StringBuilder::append( const std::string& str )
 	{
-		m_buffer.append( str );
+		append( std::string_view{ str } );
 		return *this;
 	}
 
@@ -81,213 +122,127 @@ namespace nfx::string
 	{
 		if ( str )
 		{
-			m_buffer.append( str );
+			append( std::string_view{ str, strlen( str ) } );
 		}
 		return *this;
 	}
 
 	inline StringBuilder& StringBuilder::append( char c )
 	{
-		m_buffer.append( c );
+		if ( m_size + 1 > m_capacity ) [[unlikely]]
+		{
+			ensureCapacity( m_size + 1 );
+		}
+		currentBuffer()[m_size++] = c;
 		return *this;
 	}
 
 	inline StringBuilder& StringBuilder::append( std::int8_t value )
 	{
-		// -128 to 127 needs max 4 chars
-		size_t oldSize = m_buffer.size();
-		m_buffer.resize( oldSize + 4 );
-
-		char* dest = m_buffer.data() + oldSize;
-		auto [ptr, ec] = std::to_chars( dest, dest + 4, static_cast<int>( value ) );
-
-		if ( ec == std::errc() )
+		char buffer[INT8_MAX_DIGITS];
+		auto [ptr, ec] = std::to_chars( buffer, buffer + INT8_MAX_DIGITS, static_cast<int>( value ) );
+		if ( ec == std::errc() ) [[likely]]
 		{
-			m_buffer.resize( oldSize + ( ptr - dest ) );
-		}
-		else
-		{
-			m_buffer.resize( oldSize );
+			return append( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
 		}
 		return *this;
 	}
 
 	inline StringBuilder& StringBuilder::append( std::uint8_t value )
 	{
-		// 0 to 255 needs max 3 chars
-		size_t oldSize = m_buffer.size();
-		m_buffer.resize( oldSize + 3 );
-
-		char* dest = m_buffer.data() + oldSize;
-		auto [ptr, ec] = std::to_chars( dest, dest + 3, static_cast<unsigned>( value ) );
-
-		if ( ec == std::errc() )
+		char buffer[UINT8_MAX_DIGITS];
+		auto [ptr, ec] = std::to_chars( buffer, buffer + UINT8_MAX_DIGITS, static_cast<unsigned>( value ) );
+		if ( ec == std::errc() ) [[likely]]
 		{
-			m_buffer.resize( oldSize + ( ptr - dest ) );
-		}
-		else
-		{
-			m_buffer.resize( oldSize );
+			return append( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
 		}
 		return *this;
 	}
 
 	inline StringBuilder& StringBuilder::append( std::int16_t value )
 	{
-		// -32768 to 32767 needs max 6 chars
-		size_t oldSize = m_buffer.size();
-		m_buffer.resize( oldSize + 6 );
-
-		char* dest = m_buffer.data() + oldSize;
-		auto [ptr, ec] = std::to_chars( dest, dest + 6, value );
-
-		if ( ec == std::errc() )
+		char buffer[INT16_MAX_DIGITS];
+		auto [ptr, ec] = std::to_chars( buffer, buffer + INT16_MAX_DIGITS, value );
+		if ( ec == std::errc() ) [[likely]]
 		{
-			m_buffer.resize( oldSize + ( ptr - dest ) );
-		}
-		else
-		{
-			m_buffer.resize( oldSize );
+			return append( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
 		}
 		return *this;
 	}
 
 	inline StringBuilder& StringBuilder::append( std::uint16_t value )
 	{
-		// 0 to 65535 needs max 5 chars
-		size_t oldSize = m_buffer.size();
-		m_buffer.resize( oldSize + 5 );
-
-		char* dest = m_buffer.data() + oldSize;
-		auto [ptr, ec] = std::to_chars( dest, dest + 5, value );
-
-		if ( ec == std::errc() )
+		char buffer[UINT16_MAX_DIGITS];
+		auto [ptr, ec] = std::to_chars( buffer, buffer + UINT16_MAX_DIGITS, value );
+		if ( ec == std::errc() ) [[likely]]
 		{
-			m_buffer.resize( oldSize + ( ptr - dest ) );
-		}
-		else
-		{
-			m_buffer.resize( oldSize );
+			return append( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
 		}
 		return *this;
 	}
 
 	inline StringBuilder& StringBuilder::append( std::int32_t value )
 	{
-		// -2147483648 needs max 11 chars
-		size_t oldSize = m_buffer.size();
-		m_buffer.resize( oldSize + 11 );
-
-		char* dest = m_buffer.data() + oldSize;
-		auto [ptr, ec] = std::to_chars( dest, dest + 11, value );
-
-		if ( ec == std::errc() )
+		char buffer[INT32_MAX_DIGITS];
+		auto [ptr, ec] = std::to_chars( buffer, buffer + INT32_MAX_DIGITS, value );
+		if ( ec == std::errc() ) [[likely]]
 		{
-			m_buffer.resize( oldSize + ( ptr - dest ) );
-		}
-		else
-		{
-			m_buffer.resize( oldSize );
+			return append( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
 		}
 		return *this;
 	}
 
 	inline StringBuilder& StringBuilder::append( std::uint32_t value )
 	{
-		// 4294967295 needs max 10 chars
-		size_t oldSize = m_buffer.size();
-		m_buffer.resize( oldSize + 10 );
-
-		char* dest = m_buffer.data() + oldSize;
-		auto [ptr, ec] = std::to_chars( dest, dest + 10, value );
-
-		if ( ec == std::errc() )
+		char buffer[UINT32_MAX_DIGITS];
+		auto [ptr, ec] = std::to_chars( buffer, buffer + UINT32_MAX_DIGITS, value );
+		if ( ec == std::errc() ) [[likely]]
 		{
-			m_buffer.resize( oldSize + ( ptr - dest ) );
-		}
-		else
-		{
-			m_buffer.resize( oldSize );
+			return append( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
 		}
 		return *this;
 	}
 
 	inline StringBuilder& StringBuilder::append( std::int64_t value )
 	{
-		// -9223372036854775808 needs max 20 chars
-		size_t oldSize = m_buffer.size();
-		m_buffer.resize( oldSize + 20 );
-
-		char* dest = m_buffer.data() + oldSize;
-		auto [ptr, ec] = std::to_chars( dest, dest + 20, value );
-
-		if ( ec == std::errc() )
+		char buffer[INT64_MAX_DIGITS];
+		auto [ptr, ec] = std::to_chars( buffer, buffer + INT64_MAX_DIGITS, value );
+		if ( ec == std::errc() ) [[likely]]
 		{
-			m_buffer.resize( oldSize + ( ptr - dest ) );
-		}
-		else
-		{
-			m_buffer.resize( oldSize );
+			return append( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
 		}
 		return *this;
 	}
 
 	inline StringBuilder& StringBuilder::append( std::uint64_t value )
 	{
-		// 18446744073709551615 needs max 20 chars
-		size_t oldSize = m_buffer.size();
-		m_buffer.resize( oldSize + 20 );
-
-		char* dest = m_buffer.data() + oldSize;
-		auto [ptr, ec] = std::to_chars( dest, dest + 20, value );
-
-		if ( ec == std::errc() )
+		char buffer[UINT64_MAX_DIGITS];
+		auto [ptr, ec] = std::to_chars( buffer, buffer + UINT64_MAX_DIGITS, value );
+		if ( ec == std::errc() ) [[likely]]
 		{
-			m_buffer.resize( oldSize + ( ptr - dest ) );
-		}
-		else
-		{
-			m_buffer.resize( oldSize );
+			return append( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
 		}
 		return *this;
 	}
 
 	inline StringBuilder& StringBuilder::append( float value )
 	{
-		// Sufficient for scientific notation and special values
-		size_t oldSize = m_buffer.size();
-		m_buffer.resize( oldSize + 32 );
-
-		char* dest = m_buffer.data() + oldSize;
-		auto [ptr, ec] = std::to_chars( dest, dest + 32, value );
-
-		if ( ec == std::errc() )
+		char buffer[FLOAT_MAX_CHARS];
+		auto [ptr, ec] = std::to_chars( buffer, buffer + FLOAT_MAX_CHARS, value );
+		if ( ec == std::errc() ) [[likely]]
 		{
-			m_buffer.resize( oldSize + ( ptr - dest ) );
-		}
-		else
-		{
-			m_buffer.resize( oldSize );
+			return append( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
 		}
 		return *this;
 	}
 
 	inline StringBuilder& StringBuilder::append( double value )
 	{
-		// Sufficient for scientific notation and special values
-		size_t oldSize = m_buffer.size();
-		m_buffer.resize( oldSize + 32 );
-
-		char* dest = m_buffer.data() + oldSize;
-		auto [ptr, ec] = std::to_chars( dest, dest + 32, value );
-
-		if ( ec == std::errc() )
+		char buffer[DOUBLE_MAX_CHARS];
+		auto [ptr, ec] = std::to_chars( buffer, buffer + DOUBLE_MAX_CHARS, value );
+		if ( ec == std::errc() ) [[likely]]
 		{
-			m_buffer.resize( oldSize + ( ptr - dest ) );
-		}
-		else
-		{
-			m_buffer.resize( oldSize );
+			return append( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
 		}
 		return *this;
 	}
@@ -398,116 +353,64 @@ namespace nfx::string
 	}
 
 	//----------------------------------------------
-	// Size and capacity management
+	// String conversion
 	//----------------------------------------------
 
-	inline size_t StringBuilder::length() const noexcept
+	inline std::string StringBuilder::toString() const
 	{
-		return m_buffer.size();
+		return std::string( currentBuffer(), m_size );
 	}
 
-	inline void StringBuilder::reserve( size_t newCapacity )
+	inline std::string_view StringBuilder::toStringView() const noexcept
 	{
-		m_buffer.reserve( newCapacity );
+		return std::string_view{ currentBuffer(), m_size };
 	}
 
-	inline void StringBuilder::resize( size_t newSize )
+	//----------------------------------------------
+	// STL support
+	//----------------------------------------------
+
+	inline void StringBuilder::push_back( char c )
 	{
-		m_buffer.resize( newSize );
+		append( c );
 	}
 
 	//----------------------------------------------
 	// Iterator interface
 	//----------------------------------------------
 
-	inline StringBuilder::Iterator StringBuilder::begin()
+	inline StringBuilder::Iterator StringBuilder::begin() noexcept
 	{
-		return m_buffer.data();
+		return currentBuffer();
 	}
 
-	inline StringBuilder::ConstIterator StringBuilder::begin() const
+	inline StringBuilder::ConstIterator StringBuilder::begin() const noexcept
 	{
-		return m_buffer.data();
+		return currentBuffer();
 	}
 
-	inline StringBuilder::Iterator StringBuilder::end()
+	inline StringBuilder::Iterator StringBuilder::end() noexcept
 	{
-		return m_buffer.end();
+		return currentBuffer() + m_size;
 	}
 
-	inline StringBuilder::ConstIterator StringBuilder::end() const
+	inline StringBuilder::ConstIterator StringBuilder::end() const noexcept
 	{
-		return m_buffer.end();
-	}
-
-	//=====================================================================
-	// StringBuilderLease class
-	//=====================================================================
-
-	//----------------------------------------------
-	// Construction
-	//----------------------------------------------
-
-	inline StringBuilderLease::StringBuilderLease( DynamicStringBuffer* buffer )
-		: m_buffer{ buffer },
-		  m_valid{ true }
-	{
-	}
-
-	inline StringBuilderLease::StringBuilderLease( StringBuilderLease&& other ) noexcept
-		: m_buffer{ std::exchange( other.m_buffer, nullptr ) },
-		  m_valid{ std::exchange( other.m_valid, false ) }
-	{
+		return currentBuffer() + m_size;
 	}
 
 	//----------------------------------------------
-	// Assignment
+	// Private helper methods
 	//----------------------------------------------
 
-	inline StringBuilderLease& StringBuilderLease::operator=( StringBuilderLease&& other ) noexcept
+	inline char* StringBuilder::currentBuffer() noexcept
 	{
-		if ( this != &other )
-		{
-			dispose();
-			m_buffer = std::exchange( other.m_buffer, nullptr );
-			m_valid = std::exchange( other.m_valid, false );
-		}
-
-		return *this;
+		return m_onHeap ? m_heapBuffer.get() : m_stackBuffer;
 	}
 
-	//----------------------------------------------
-	// Public interface implementations
-	//----------------------------------------------
-
-	inline StringBuilder StringBuilderLease::create()
+	inline const char* StringBuilder::currentBuffer() const noexcept
 	{
-		if ( !m_valid )
-		{
-			throwInvalidOperation();
-		}
-
-		return StringBuilder{ *m_buffer };
-	}
-
-	inline DynamicStringBuffer& StringBuilderLease::buffer()
-	{
-		if ( !m_valid )
-		{
-			throwInvalidOperation();
-		}
-
-		return *m_buffer;
-	}
-
-	inline std::string StringBuilderLease::toString() const
-	{
-		if ( !m_valid )
-		{
-			throwInvalidOperation();
-		}
-
-		return m_buffer->toString();
+		return m_onHeap ? m_heapBuffer.get() : m_stackBuffer;
 	}
 } // namespace nfx::string
 
@@ -518,20 +421,6 @@ namespace std
 	//=====================================================================
 
 	template <>
-	struct formatter<nfx::string::DynamicStringBuffer>
-	{
-		constexpr auto parse( std::format_parse_context& ctx )
-		{
-			return ctx.begin();
-		}
-
-		auto format( const nfx::string::DynamicStringBuffer& buf, std::format_context& ctx ) const
-		{
-			return std::format_to( ctx.out(), "{}", buf.toStringView() );
-		}
-	};
-
-	template <>
 	struct formatter<nfx::string::StringBuilder>
 	{
 		constexpr auto parse( std::format_parse_context& ctx )
@@ -539,10 +428,9 @@ namespace std
 			return ctx.begin();
 		}
 
-		auto format( const nfx::string::StringBuilder& builder, std::format_context& ctx ) const
+		auto format( const nfx::string::StringBuilder& buf, std::format_context& ctx ) const
 		{
-			return std::format_to( ctx.out(), "{}",
-				std::string_view( builder.begin(), builder.length() ) );
+			return std::format_to( ctx.out(), "{}", buf.toStringView() );
 		}
 	};
 } // namespace std

@@ -10,46 +10,35 @@
 
 [![Linux GCC](https://img.shields.io/github/actions/workflow/status/nfx-libs/nfx-stringbuilder/build-linux-gcc.yml?branch=main&label=Linux%20GCC&style=flat-square)](https://github.com/nfx-libs/nfx-stringbuilder/actions/workflows/build-linux-gcc.yml) [![Linux Clang](https://img.shields.io/github/actions/workflow/status/nfx-libs/nfx-stringbuilder/build-linux-clang.yml?branch=main&label=Linux%20Clang&style=flat-square)](https://github.com/nfx-libs/nfx-stringbuilder/actions/workflows/build-linux-clang.yml) [![Windows MinGW](https://img.shields.io/github/actions/workflow/status/nfx-libs/nfx-stringbuilder/build-windows-mingw.yml?branch=main&label=Windows%20MinGW&style=flat-square)](https://github.com/nfx-libs/nfx-stringbuilder/actions/workflows/build-windows-mingw.yml) [![Windows MSVC](https://img.shields.io/github/actions/workflow/status/nfx-libs/nfx-stringbuilder/build-windows-msvc.yml?branch=main&label=Windows%20MSVC&style=flat-square)](https://github.com/nfx-libs/nfx-stringbuilder/actions/workflows/build-windows-msvc.yml) [![CodeQL](https://img.shields.io/github/actions/workflow/status/nfx-libs/nfx-stringbuilder/codeql.yml?branch=main&label=CodeQL&style=flat-square)](https://github.com/nfx-libs/nfx-stringbuilder/actions/workflows/codeql.yml)
 
-> A cross-platform C++20 string builder with three-tier memory pooling, thread-local caching, and Small Buffer Optimization
+> A cross-platform C++20 high-performance string builder with Small Buffer Optimization and efficient memory management
 
 ## Overview
 
-**nfx-stringbuilder** is a modern C++20 library providing string building capabilities through a three-tier memory pooling system. Designed for applications requiring efficient string concatenation with minimal allocations, it features thread-local caching, cross-thread buffer sharing, and comprehensive performance monitoring.
+**nfx-stringbuilder** is a modern C++20 library providing efficient string building capabilities with zero heap allocations for small strings (≤256 bytes). Designed for applications requiring high-performance string concatenation with minimal allocations, it features Small Buffer Optimization (SBO), comprehensive type support, and C++20 std::format integration.
 
 ## Key Features
 
-### 🔄 Three-Tier Memory Pooling Architecture
+### ⚡ Small Buffer Optimization (SBO)
 
-- **Tier 1: Thread-Local Cache**
-  - Zero synchronization overhead for single-threaded hotpaths
-  - Immediate buffer availability with no locking
+- **256-byte Stack Buffer**: Zero heap allocations for typical strings
+  - Immediate buffer availability with no memory overhead
   - Perfect for high-frequency string operations
-- **Tier 2: Shared Cross-Thread Pool**
-  - Mutex-protected buffer sharing across threads
-  - Size-limited to prevent memory bloat
-  - Configurable pool size and retention limits
-- **Tier 3: Dynamic Allocation**
-  - Fallback when pools are exhausted
-  - Pre-sized buffers for optimal performance
-  - Automatic capacity management with 2.x growth factor
+  - Most application strings fit within SBO threshold
+- **Adaptive Growth Strategy**: Efficient heap allocation when needed
+  - Aggressive growth (2.0×) for buffers <8KB
+  - Conservative growth (1.5×) for buffers ≥8KB
+  - Minimizes reallocation overhead
 
 ### 🛠️ Rich String Building Interface
 
-- **Fluent API**: Stream operators (`<<`) for natural concatenation
-- **Type Support**: Strings, string_view, C-strings, characters, and numeric types (int32/64, uint32/64, float, double)
+- **Fluent API**: Method chaining and stream operators (`<<`) for natural concatenation
+- **Variadic append()**: Batch multiple arguments in a single call for optimal performance
+- **Type Support**: Strings, string_view, C-strings, characters, and numeric types (int8/16/32/64, uint8/16/32/64, float, double)
 - **C++20 std::format Integration**: Template `format()` method for modern formatting
-- **std::formatter Specializations**: Zero-copy integration with `std::format` for StringBuilder and DynamicStringBuffer
-- **Capacity Hints**: Pre-allocate buffers with `lease(capacityHint)` for optimal performance
+- **std::formatter Specializations**: Zero-copy integration with `std::format` for StringBuilder
+- **Capacity Hints**: Pre-allocate buffers with constructor parameter for optimal performance
 - **Direct Buffer Access**: High-performance operations without wrappers
 - **Iterator Support**: Range-based for loops and STL algorithms
-- **RAII Lease Management**: Automatic cleanup and pool return
-
-### 📊 Performance Monitoring
-
-- **Built-in Statistics**: Track pool hits, misses, and allocations
-- **Hit Rate Calculation**: Monitor pooling efficiency
-- **Thread-Local Metrics**: Per-thread and global statistics
-- **Zero Overhead**: Statistics can be disabled at compile time
 
 ### 📊 Real-World Applications
 
@@ -64,15 +53,15 @@
 
 - **Small Buffer Optimization (SBO)**: 256-byte stack buffer eliminates heap allocations for most strings
 - **Zero-Copy Operations**: `string_view` access without allocation
-- **High Cache Hit Rates**: 90%+ pool hit rate in typical workloads
+- **Batch Operations**: Variadic append() reduces function call overhead
 - **Sub-Microsecond Operations**: Competitive with {fmt} and Abseil
-- **Memory Efficiency**: Automatic buffer recycling and size management
+- **Memory Efficiency**: Smart capacity management and growth strategies
 
 ### 🌍 Cross-Platform Support
 
 - **Operating Systems**: Linux, Windows
 - **Compilers**: GCC 14+, Clang 18+, MSVC 2022+
-- **Thread-Safe**: All pool operations are thread-safe
+- **Thread-Safe**: Each StringBuilder instance is thread-safe when not shared
 - **Consistent Behavior**: Same performance characteristics across platforms
 
 ## Quick Start
@@ -227,19 +216,21 @@ using namespace nfx::string;
 
 int main()
 {
-    // Acquire a lease from the pool (RAII - automatic cleanup)
-    auto lease = StringBuilderPool::lease();
-    auto builder = lease.create();
+    // Create a StringBuilder instance
+    StringBuilder builder;
 
     // Build strings with fluent interface
-    builder << "Hello" << ", " << "World" << "!";
+    builder.append("Hello");
+    builder.append(", ");
+    builder.append("World");
+    builder.append("!");
 
     // Convert to std::string
-    std::string result = lease.toString();
+    std::string result = builder.toString();
     // Output: "Hello, World!"
 
     return 0;
-} // Buffer automatically returned to pool
+}
 ```
 
 ### Efficient String Concatenation
@@ -252,25 +243,29 @@ using namespace nfx::string;
 
 std::string buildReport(const std::vector<std::string>& items)
 {
-    auto lease = StringBuilderPool::lease();
-    auto builder = lease.create();
+    StringBuilder builder;
 
     // Reserve capacity for better performance
-    lease.buffer().reserve(1024);
+    builder.reserve(1024);
 
     // Build header
-    builder << "=== Report ===\n";
+    builder.append("=== Report ===\n");
 
     // Add items
     for (size_t i = 0; i < items.size(); ++i)
     {
-        builder << "Item " << std::to_string(i + 1) << ": " << items[i] << "\n";
+        builder.append("Item ");
+        builder.append(std::to_string(i + 1));
+        builder.append(": ");
+        builder.append(items[i]);
+        builder.append("\n");
     }
 
     // Add footer
-    builder << "Total items: " << std::to_string(items.size());
+    builder.append("Total items: ");
+    builder.append(std::to_string(items.size()));
 
-    return lease.toString();
+    return builder.toString();
 }
 ```
 
@@ -283,24 +278,28 @@ using namespace nfx::string;
 
 void demonstrateStringTypes()
 {
-    auto lease = StringBuilderPool::lease();
-    auto builder = lease.create();
+    StringBuilder builder;
 
     // std::string
     std::string stdStr = "from std::string";
-    builder << stdStr << " | ";
+    builder.append(stdStr);
+    builder.append(" | ");
 
     // string_view (zero-copy)
     std::string_view sv = "from string_view";
-    builder << sv << " | ";
+    builder.append(sv);
+    builder.append(" | ");
 
     // C-string
-    builder << "from C-string" << " | ";
+    builder.append("from C-string");
+    builder.append(" | ");
 
     // Single characters
-    builder << 'A' << 'B' << 'C';
+    builder.append('A');
+    builder.append('B');
+    builder.append('C');
 
-    std::string result = lease.toString();
+    std::string result = builder.toString();
     // Output: "from std::string | from string_view | from C-string | ABC"
 }
 ```
@@ -314,8 +313,7 @@ using namespace nfx::string;
 
 void demonstrateNumericTypes()
 {
-    auto lease = StringBuilderPool::lease();
-    auto builder = lease.create();
+    StringBuilder builder;
 
     // Integer types
     int32_t i32 = -42;
@@ -323,19 +321,29 @@ void demonstrateNumericTypes()
     int64_t i64 = -9223372036854775807LL;
     uint64_t u64 = 18446744073709551615ULL;
 
-    builder << "int32_t: " << i32 << ", ";
-    builder << "uint32_t: " << u32 << ", ";
-    builder << "int64_t: " << i64 << ", ";
-    builder << "uint64_t: " << u64;
+    builder.append("int32_t: ");
+    builder.append(std::to_string(i32));
+    builder.append(", ");
+    builder.append("uint32_t: ");
+    builder.append(std::to_string(u32));
+    builder.append(", ");
+    builder.append("int64_t: ");
+    builder.append(std::to_string(i64));
+    builder.append(", ");
+    builder.append("uint64_t: ");
+    builder.append(std::to_string(u64));
 
     // Floating-point types
     float f = 3.14159f;
     double d = 2.718281828459045;
 
-    builder << "\nfloat: " << f << ", ";
-    builder << "double: " << d;
+    builder.append("\nfloat: ");
+    builder.append(std::to_string(f));
+    builder.append(", ");
+    builder.append("double: ");
+    builder.append(std::to_string(d));
 
-    std::string result = lease.toString();
+    std::string result = builder.toString();
     // Output: "int32_t: -42, uint32_t: 42, int64_t: -9223372036854775807, uint64_t: 18446744073709551615
     //          float: 3.14159, double: 2.71828"
 }
@@ -350,24 +358,23 @@ using namespace nfx::string;
 
 void demonstrateFormatMethod()
 {
-    auto lease = StringBuilderPool::lease();
-    auto builder = lease.create();
+    StringBuilder builder;
 
-    // Using format() method with various types
-    builder << "User: ";
-    builder.format("{} (ID: {:08})", "Alice", 123);
-    builder << "\n";
+    // Using std::format with append
+    builder.append("User: ");
+    builder.append(std::format("{} (ID: {:08})", "Alice", 123));
+    builder.append("\n");
 
     // Format with floating-point precision
-    builder << "Price: ";
-    builder.format("${:.2f}", 19.99);
-    builder << "\n";
+    builder.append("Price: ");
+    builder.append(std::format("${:.2f}", 19.99));
+    builder.append("\n");
 
     // Format with hex and binary
-    builder << "Value: ";
-    builder.format("hex=0x{:X}, bin=0b{:b}", 255, 15);
+    builder.append("Value: ");
+    builder.append(std::format("hex=0x{:X}, bin=0b{:b}", 255, 15));
 
-    std::string result = lease.toString();
+    std::string result = builder.toString();
     // Output: "User: Alice (ID: 00000123)
     //          Price: $19.99
     //          Value: hex=0xFF, bin=0b1111"
@@ -384,19 +391,14 @@ using namespace nfx::string;
 
 void demonstrateStdFormatter()
 {
-    auto lease = StringBuilderPool::lease();
-    auto builder = lease.create();
+    StringBuilder builder;
 
-    builder << "Hello, " << "World!";
+    builder.append("Hello, ");
+    builder.append("World!");
 
-    // Use StringBuilder directly with std::format (zero-copy)
     std::string formatted = std::format("Result: {}", builder);
-    // Output: "Result: Hello, World!"
 
-    // DynamicStringBuffer also supports std::formatter
-    auto& buffer = lease.buffer();
-    std::string bufferFormatted = std::format("Buffer content: {}", buffer);
-    // Output: "Buffer content: Hello, World!"
+    std::string bufferFormatted = std::format("Buffer content: {}", builder);
 }
 ```
 
@@ -410,16 +412,17 @@ using namespace nfx::string;
 void demonstrateCapacityHints()
 {
     // Pre-allocate 2048 bytes to avoid reallocations
-    auto lease = StringBuilderPool::lease(2048);
-    auto builder = lease.create();
+    StringBuilder builder(2048);
 
     // Build large strings without reallocation
     for (int i = 0; i < 100; ++i)
     {
-        builder << "Item " << i << ": Some long description text here\n";
+        builder.append("Item ")
+               .append(std::to_string(i))
+               .append(": Some long description text here\n");
     }
 
-    std::string result = lease.toString();
+    std::string result = builder.toString();
     // No heap reallocations occurred during building
 }
 ```
@@ -433,69 +436,29 @@ using namespace nfx::string;
 
 void directBufferAccess()
 {
-    auto lease = StringBuilderPool::lease();
-
-    // Direct access to underlying buffer
-    auto& buffer = lease.buffer();
+    StringBuilder builder;
 
     // Append methods
-    buffer.append("Direct ");
-    buffer.append("buffer ");
-    buffer.append("access");
-    buffer.append('!');
+    builder.append("Direct ");
+    builder.append("buffer ");
+    builder.append("access");
+    builder.append('!');
 
     // Get size and capacity
-    size_t size = buffer.size();         // Current content size
-    size_t capacity = buffer.capacity(); // Allocated capacity
+    size_t size = builder.size();         // Current content size
+    size_t capacity = builder.capacity(); // Allocated capacity
 
     // Zero-copy string_view access
-    std::string_view view = buffer.toStringView();
+    std::string_view view = builder.toStringView();
 
     // Iterator support
-    for (char c : buffer)
+    for (char c : builder)
     {
         // Process each character
     }
 
     // Clear for reuse
-    buffer.clear();
-}
-```
-
-### Pool Statistics and Monitoring
-
-```cpp
-#include <nfx/string/StringBuilder.h>
-#include <iostream>
-
-using namespace nfx::string;
-
-void demonstrateStatistics()
-{
-    // Reset statistics for clean measurement
-    StringBuilderPool::resetStats();
-
-    // Perform string operations
-    for (int i = 0; i < 1000; ++i)
-    {
-        auto lease = StringBuilderPool::lease();
-        auto builder = lease.create();
-        builder << "Iteration " << std::to_string(i);
-        std::string result = lease.toString();
-    }
-
-    // Get statistics
-    auto stats = StringBuilderPool::stats();
-
-    std::cout << "Total Requests: " << stats.totalRequests << "\n";
-    std::cout << "Thread-Local Hits: " << stats.threadLocalHits << "\n";
-    std::cout << "Pool Hits: " << stats.dynamicStringBufferPoolHits << "\n";
-    std::cout << "New Allocations: " << stats.newAllocations << "\n";
-    std::cout << "Hit Rate: " << (stats.hitRate * 100.0) << "%\n";
-
-    // Clear pool if needed
-    size_t cleared = StringBuilderPool::clear();
-    std::cout << "Cleared " << cleared << " buffers from pool\n";
+    builder.clear();
 }
 ```
 
@@ -510,16 +473,17 @@ using namespace nfx::string;
 
 void threadWorker(int threadId)
 {
-    // Each thread safely uses the pool
+    // Each thread creates its own StringBuilder instance
     for (int i = 0; i < 100; ++i)
     {
-        auto lease = StringBuilderPool::lease();
-        auto builder = lease.create();
+        StringBuilder builder;
 
-        builder << "Thread " << std::to_string(threadId)
-                << " - Iteration " << std::to_string(i);
+        builder.append("Thread ")
+               .append(std::to_string(threadId))
+               .append(" - Iteration ")
+               .append(std::to_string(i));
 
-        std::string result = lease.toString();
+        std::string result = builder.toString();
         // Process result...
     }
 }
@@ -540,81 +504,15 @@ void demonstrateMultithreading()
         t.join();
     }
 
-    // Check pool statistics
-    auto stats = StringBuilderPool::stats();
-    std::cout << "Multi-threaded hit rate: "
-              << (stats.hitRate * 100.0) << "%\n";
-}
-```
-
-### Performance Comparison Example
-
-```cpp
-#include <nfx/string/StringBuilder.h>
-#include <sstream>
-#include <chrono>
-#include <iostream>
-
-using namespace nfx::string;
-
-void performanceComparison()
-{
-    const int iterations = 10000;
-    const std::vector<std::string> words = {"Hello", "World", "Performance", "Test"};
-
-    // Test 1: StringBuilderPool
-    auto start1 = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < iterations; ++i)
-    {
-        auto lease = StringBuilderPool::lease();
-        auto builder = lease.create();
-        for (const auto& word : words)
-        {
-            builder << word << " ";
-        }
-        std::string result = lease.toString();
-    }
-    auto end1 = std::chrono::high_resolution_clock::now();
-    auto duration1 = std::chrono::duration_cast<std::chrono::microseconds>(end1 - start1);
-
-    // Test 2: std::string
-    auto start2 = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < iterations; ++i)
-    {
-        std::string result;
-        for (const auto& word : words)
-        {
-            result += word + " ";
-        }
-    }
-    auto end2 = std::chrono::high_resolution_clock::now();
-    auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(end2 - start2);
-
-    // Test 3: std::ostringstream
-    auto start3 = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < iterations; ++i)
-    {
-        std::ostringstream oss;
-        for (const auto& word : words)
-        {
-            oss << word << " ";
-        }
-        std::string result = oss.str();
-    }
-    auto end3 = std::chrono::high_resolution_clock::now();
-    auto duration3 = std::chrono::duration_cast<std::chrono::microseconds>(end3 - start3);
-
-    std::cout << "StringBuilderPool: " << duration1.count() << " μs\n";
-    std::cout << "std::string:       " << duration2.count() << " μs\n";
-    std::cout << "std::ostringstream:" << duration3.count() << " μs\n";
+    std::cout << "All threads completed successfully\n";
 }
 ```
 
 ### Complete Example
 
 ```cpp
-#include <iostream>
 #include <nfx/string/StringBuilder.h>
+#include <iostream>
 
 int main()
 {
@@ -622,38 +520,30 @@ int main()
 
     // Example: Building a formatted log message
     {
-        auto lease = StringBuilderPool::lease();
-        auto builder = lease.create();
+        StringBuilder builder;
 
-        // Build structured log entry
-        builder << "[INFO] ";
-        builder << "User logged in: ";
-        builder << "username=john.doe, ";
-        builder << "ip=192.168.1.100, ";
-        builder << "timestamp=2025-10-31";
+        // Build structured log entry with fluent chaining
+        builder.append("[INFO] ")
+               .append("User logged in: ")
+               .append("username=john.doe, ")
+               .append("ip=192.168.1.100, ")
+               .append("timestamp=2025-10-31");
 
-        std::string logMessage = lease.toString();
+        std::string logMessage = builder.toString();
         std::cout << logMessage << std::endl;
-    } // Lease returned to pool here
+    }
 
-    // Acquire a new lease (should hit the pool cache)
+    // Build another message
     {
-        auto lease = StringBuilderPool::lease();
-        auto builder = lease.create();
+        StringBuilder builder;
 
-        builder << "[ERROR] ";
-        builder << "Connection failed: ";
-        builder << "timeout after 30s";
+        builder.append("[ERROR] ")
+               .append("Connection failed: ")
+               .append("timeout after 30s");
 
-        std::string errorMessage = lease.toString();
+        std::string errorMessage = builder.toString();
         std::cout << errorMessage << std::endl;
-    } // Lease returned to pool here
-
-    // Display pool statistics
-    auto stats = StringBuilderPool::stats();
-    std::cout << "\nPool Statistics:\n";
-    std::cout << "Total requests: " << stats.totalRequests << "\n";
-    std::cout << "Hit rate: " << (stats.hitRate * 100.0) << "%\n";
+    }
 
     return 0;
 }
@@ -664,10 +554,6 @@ int main()
 ```
 [INFO] User logged in: username=john.doe, ip=192.168.1.100, timestamp=2025-10-31
 [ERROR] Connection failed: timeout after 30s
-
-Pool Statistics:
-Total requests: 2
-Hit rate: 50%
 ```
 
 ## Installation & Packaging
@@ -737,7 +623,6 @@ nfx-stringbuilder/
 For detailed performance metrics and benchmarks, see:
 
 - [Standard benchmarks](benchmark/README.md)
-- [Comparative benchmarks](benchmark/comparative/README.md) - Performance comparison vs {fmt} and Abseil
 
 ## Roadmap
 
@@ -757,9 +642,11 @@ This project is licensed under the MIT License.
 
 - **[GoogleTest](https://github.com/google/googletest)**: Testing framework (BSD 3-Clause License) - Development only
 - **[Google Benchmark](https://github.com/google/benchmark)**: Performance benchmarking framework (Apache 2.0 License) - Development only
+- **[{fmt}](https://github.com/fmtlib/fmt)**: Fast formatting library (MIT License) - Benchmarking only
+- **[Abseil](https://github.com/abseil/abseil-cpp)**: C++ common libraries (Apache 2.0 License) - Benchmarking only
 
 All dependencies are automatically fetched via CMake FetchContent when building the library, tests, or benchmarks.
 
 ---
 
-_Updated on December 14, 2025_
+_Updated on December 17, 2025_

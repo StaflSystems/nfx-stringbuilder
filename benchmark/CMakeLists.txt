@@ -50,6 +50,68 @@ else()
 	message(STATUS "Using system-installed Google Benchmark version ${benchmark_VERSION} at ${benchmark_DIR}")
 endif()
 
+if(NFX_STRINGBUILDER_BUILD_COMPARATIVE_BENCHMARKS)
+	set(NFX_STRINGBUILDER_DEPS_FMT_VERSION    "12.1.0")
+	set(NFX_STRINGBUILDER_DEPS_ABSEIL_VERSION "20240722.0")
+
+	# --- {fmt} ---
+	find_package(fmt ${NFX_STRINGBUILDER_DEPS_FMT_VERSION} EXACT QUIET)
+	if(NOT fmt_FOUND)
+		message(STATUS "{fmt} not found on system, using FetchContent")
+		
+		set(FMT_PEDANTIC       OFF CACHE BOOL "" FORCE)
+		set(FMT_WERROR         OFF CACHE BOOL "" FORCE)
+		set(FMT_DOC            OFF CACHE BOOL "" FORCE)
+		set(FMT_INSTALL        OFF CACHE BOOL "" FORCE)
+		set(FMT_TEST           OFF CACHE BOOL "" FORCE)
+		set(FMT_FUZZ           OFF CACHE BOOL "" FORCE)
+		set(FMT_CUDA_TEST      OFF CACHE BOOL "" FORCE)
+		set(FMT_OS             ON  CACHE BOOL "" FORCE)
+		set(FMT_MODULE         OFF CACHE BOOL "" FORCE)
+		set(FMT_SYSTEM_HEADERS ON  CACHE BOOL "" FORCE)
+		set(FMT_UNICODE        ON  CACHE BOOL "" FORCE)
+
+		FetchContent_Declare(
+			fmt
+			GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+			GIT_TAG        ${NFX_STRINGBUILDER_DEPS_FMT_VERSION}
+			GIT_SHALLOW    TRUE
+		)
+		
+		FetchContent_MakeAvailable(fmt)
+	else()
+		message(STATUS "Using system-installed {fmt} version ${fmt_VERSION} at ${fmt_DIR}")
+	endif()
+
+	# --- Abseil ---
+	find_package(absl ${NFX_STRINGBUILDER_DEPS_ABSEIL_VERSION} EXACT QUIET)
+	if(NOT absl_FOUND)
+		message(STATUS "Abseil not found on system, using FetchContent")
+		
+		set(ABSL_ENABLE_INSTALL               OFF CACHE BOOL "" FORCE)
+		set(ABSL_PROPAGATE_CXX_STD            ON  CACHE BOOL "" FORCE)
+		set(ABSL_USE_SYSTEM_INCLUDES          OFF CACHE BOOL "" FORCE)
+		set(ABSL_MSVC_STATIC_RUNTIME          OFF CACHE BOOL "" FORCE)
+		set(ABSL_BUILD_TESTING                OFF CACHE BOOL "" FORCE)
+		set(ABSL_BUILD_TEST_HELPERS           OFF CACHE BOOL "" FORCE)
+		set(ABSL_USE_EXTERNAL_GOOGLETEST      OFF CACHE BOOL "" FORCE)
+		set(ABSL_FIND_GOOGLETEST              OFF CACHE BOOL "" FORCE)
+		set(ABSL_USE_GOOGLETEST_HEAD          OFF CACHE BOOL "" FORCE)
+		set(ABSL_BUILD_MONOLITHIC_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+
+		FetchContent_Declare(
+			abseil
+			GIT_REPOSITORY https://github.com/abseil/abseil-cpp.git
+			GIT_TAG        ${NFX_STRINGBUILDER_DEPS_ABSEIL_VERSION}
+			GIT_SHALLOW    TRUE
+		)
+		
+		FetchContent_MakeAvailable(abseil)
+	else()
+		message(STATUS "Using system-installed Abseil version ${absl_VERSION} at ${absl_DIR}")
+	endif()
+endif()
+
 #----------------------------------------------
 # Benchmarks source files
 #----------------------------------------------
@@ -79,12 +141,28 @@ foreach(benchmark_source ${benchmark_sources})
 		)
 
 		#----------------------------------------------
+		# Optional library support
+		#----------------------------------------------
+
+		if(NFX_STRINGBUILDER_BUILD_COMPARATIVE_BENCHMARKS)
+			if ( TARGET fmt::fmt )
+				target_link_libraries( ${benchmark_target_name} PRIVATE fmt::fmt )
+				target_compile_definitions( ${benchmark_target_name} PRIVATE HAS_FMT )
+			endif()
+
+			if ( TARGET absl::strings )
+				target_link_libraries( ${benchmark_target_name} PRIVATE absl::strings )
+				target_compile_definitions( ${benchmark_target_name} PRIVATE HAS_ABSEIL )
+			endif()
+		endif()
+
+		#----------------------------------------------
 		# Enable specific CPU features
 		#----------------------------------------------
 
 		target_compile_options(${benchmark_target_name} PRIVATE
 			$<$<CXX_COMPILER_ID:MSVC>:/arch:AVX2>
-			$<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:-msse4.2>
+			$<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:-march=native>
 		)
 
 		#----------------------------------------------
@@ -103,9 +181,3 @@ foreach(benchmark_source ${benchmark_sources})
 		)
 	endif()
 endforeach()
-
-#----------------------------------------------
-# Comparative benchmarks
-#----------------------------------------------
-
-add_subdirectory(comparative)

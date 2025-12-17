@@ -59,9 +59,10 @@ body:
         int main() {
             using namespace nfx::string;
             
-            auto lease = StringBuilderPool::lease();
-            auto builder = lease.create();
-            builder << "Hello" << ", " << "World";
+            StringBuilder builder;
+            builder.append("Hello");
+            builder.append(", ");
+            builder.append("World");
             // Your code here that reproduces the issue
         }
     validations:

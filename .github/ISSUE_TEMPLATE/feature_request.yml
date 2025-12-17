@@ -48,9 +48,9 @@ body:
             using namespace nfx::string;
             
             // Example usage of proposed feature
-            auto lease = StringBuilderPool::lease();
-            auto builder = lease.create();
-            builder << "Example" << " usage";
+            StringBuilder builder;
+            builder.append("Example");
+            builder.append(" usage");
             
             // Your proposed API usage here
         }

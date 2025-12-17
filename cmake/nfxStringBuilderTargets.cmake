@@ -70,6 +70,12 @@ function(configure_target target_name)
 		SOVERSION ${PROJECT_VERSION_MAJOR}
 		DEBUG_POSTFIX "-d"
 	)
+
+	# --- Enable specific CPU features ---
+	target_compile_options(${target_name} PRIVATE
+		$<$<CXX_COMPILER_ID:MSVC>:/arch:AVX2>
+		$<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:-march=native>
+	)
 endfunction()
 
 # --- Apply configuration to both targets ---

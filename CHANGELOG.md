@@ -8,8 +8,12 @@
 
 ### Changed
 
+- **BREAKING**: Refactored architecture with clear separation of concerns:
+  - `StringBuilder` - Core string building with Small Buffer Optimization (SBO)
+  - `StringBuilderPool` - Three-tier pooling system (thread-local, shared, dynamic allocation)
+  - `StringBuilderLease` - RAII-based resource management for pooled buffers
 - Optimized numeric `append()` methods with direct buffer writing strategy
-- Optimized `DynamicStringBuffer::append(std::string_view)` with progressive SIMD strategy
+- Optimized `StringBuilder::append(std::string_view)` with progressive SIMD strategy
   - Added fast path for small strings (≤16 bytes) marked as `[[likely]]` using direct `memcpy`
   - Implemented unrolled SIMD loops for large copies: 128-byte AVX2 loop (4× 32-byte vectors), 64-byte SSE2 loop (4× 16-byte vectors)
   - Progressive thresholds optimize for different string sizes
@@ -23,7 +27,8 @@
 
 ### Removed
 
-- NIL
+- `DynamicStringBufferPool` class (replaced by `StringBuilderPool`)
+- `src/DynamicStringBufferPool.cpp` and `src/DynamicStringBufferPool.h` (functionality migrated to new architecture)
 
 ### Fixed
 

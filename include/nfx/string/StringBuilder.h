@@ -24,55 +24,47 @@
 
 /**
  * @file StringBuilder.h
- * @brief String pooling implementation for high-performance string building
- * @details Thread-safe shared pool with RAII lease management and statistics
+ * @brief High-performance string building with Small Buffer Optimization (SBO)
+ * @details Growable character buffer optimized for efficient string construction
  *
- * ## StringBuilderPool High-Level Architecture:
- *
- * ```
- * StringBuilderPool Public API Structure:
- * ┌─────────────────────────────────────────────────────────────┐
- * │            StringBuilderPool (Static Interface)             │
- * ├─────────────────────────────────────────────────────────────┤
- * │                lease() → StringBuilderLease                 │ ← Primary factory method
- * │                            ↓                                │
- * │  ┌─────────────────────────────────────────────────────┐    │
- * │  │            StringBuilderLease (RAII)                │    │ ← Automatic cleanup
- * │  │  ┌─────────────────────────────────────────────┐    │    │
- * │  │  │  create()  → StringBuilder                  │    │    │ ← Fluent interface
- * │  │  │  buffer()  → DynamicStringBuffer            │    │    │ ← Direct access
- * │  │  │  toString() → std::string                   │    │    │ ← Conversion
- * │  │  └─────────────────────────────────────────────┘    │    │
- * │  └─────────────────────────────────────────────────────┘    │
- * │                                                             │
- * │  StringBuilder: Fluent string building interface            │ ← Stream operators
- * │  DynamicStringBuffer: High-performance buffer (SBO)         │ ← Zero-copy operations
- * └─────────────────────────────────────────────────────────────┘
- * ```
- *
- * ## Typical Usage Pattern:
+ * ## StringBuilder Memory Architecture:
  *
  * ```
- * StringBuilderPool Usage Flow:
- * ┌─────────────────────────────────────────────────────────────┐
- * │                  User Code Example                          │
- * ├─────────────────────────────────────────────────────────────┤
- * │  // 1. Acquire lease (automatic pooling)                    │
- * │  auto lease = StringBuilderPool::lease();                   │
- * │                            ↓                                │
- * │  // 2. Create builder for fluent operations                 │
- * │  auto builder = lease.create();                             │
- * │                            ↓                                │
- * │  // 3. Build string with zero allocations                   │
- * │  builder << "Hello" << ", " << "World" << "!";              │
- * │  builder.append(" Additional text");                        │
- * │                            ↓                                │
- * │  // 4. Extract result                                       │
- * │  std::string result = lease.toString();                     │
- * │                            ↓                                │
- * │  // 5. Automatic cleanup (lease destructor)                 │
- * │  // Buffer returned to pool for reuse                       │
- * └─────────────────────────────────────────────────────────────┘
+ * Memory Layout:
+ * ┌──────────────────────────────────────────────────────┐
+ * │              StringBuilder Buffer                    │
+ * ├──────────────────────────────────────────────────────┤
+ * │  Size ≤ 256 bytes:                                   │
+ * │  ┌─────────────────────────────────────┐             │
+ * │  │   Stack Buffer (SBO)                │             │
+ * │  │   - Zero heap allocations           │             │
+ * │  │   - Cache-friendly (256 bytes)      │             │
+ * │  │   - Automatic cleanup               │             │
+ * │  └─────────────────────────────────────┘             │
+ * │                                                      │
+ * │  Size > 256 bytes:                                   │
+ * │  ┌─────────────────────────────────────┐             │
+ * │  │   Heap Buffer (Dynamic)             │             │
+ * │  │   - Exponential growth (< 8KB)      │             │
+ * │  │   - Conservative growth (≥ 8KB)     │             │
+ * │  │   - Managed by unique_ptr           │             │
+ * │  └─────────────────────────────────────┘             │
+ * └──────────────────────────────────────────────────────┘
+ * ```
+ *
+ * ## Growth Strategy:
+ *
+ * ```
+ * Buffer Expansion:
+ * ┌──────────────────────────────────────────────────────┐
+ * │  Small buffers (< 8KB):                              │
+ * │    capacity_new = capacity_old × 2.0                 │
+ * │    → Aggressive growth for frequent appends          │
+ * │                                                      │
+ * │  Large buffers (≥ 8KB):                              │
+ * │    capacity_new = capacity_old + (capacity_old / 2)  │
+ * │    → Conservative growth to limit memory overhead    │
+ * └──────────────────────────────────────────────────────┘
  * ```
  */
 
@@ -87,58 +79,54 @@
 namespace nfx::string
 {
 	//=====================================================================
-	// DynamicStringBuffer class
+	// StringBuilder class
 	//=====================================================================
 
 	/**
-	 * @brief High-performance dynamic string buffer with efficient memory management
+	 * @brief High-performance string builder with efficient memory management
 	 * @details Provides a growable character buffer optimized for string building operations.
-	 *          Features automatic capacity management, iterator support, and zero-copy
-	 *          string_view access. Designed for internal use by StringBuilderPool.
+	 *          Features automatic capacity management, Small Buffer Optimization (SBO),
+	 *          iterator support, and zero-copy string_view access.
 	 *
 	 * @warning Not thread-safe - external synchronization required for concurrent access.
-	 *
-	 * @see StringBuilderPool for the recommended high-level interface
-	 * @see StringBuilder for a more convenient wrapper around this buffer
+	 *          Each StringBuilder instance should be used by a single thread or protected
+	 *          by external synchronization mechanisms.
 	 */
-	class DynamicStringBuffer final
+	class StringBuilder final
 	{
-		friend class DynamicStringBufferPool;
-
-	private:
+	public:
 		//----------------------------------------------
 		// Construction
 		//----------------------------------------------
 
 		/** @brief Default constructor */
-		DynamicStringBuffer();
+		StringBuilder();
 
 		/**
 		 * @brief Constructor with specified initial capacity
 		 * @param initialCapacity Initial buffer capacity in bytes
 		 * @details Pre-allocates buffer to avoid reallocations during initial growth
 		 */
-		explicit DynamicStringBuffer( size_t initialCapacity );
+		explicit StringBuilder( size_t initialCapacity );
 
-	public:
 		/**
 		 * @brief Copy constructor
-		 * @param other The DynamicStringBuffer to copy from
+		 * @param other The StringBuilder to copy from
 		 */
-		DynamicStringBuffer( const DynamicStringBuffer& other );
+		StringBuilder( const StringBuilder& other );
 
 		/**
 		 * @brief Move constructor
-		 * @param other The DynamicStringBuffer to move from
+		 * @param other The StringBuilder to move from
 		 */
-		DynamicStringBuffer( DynamicStringBuffer&& other ) noexcept;
+		StringBuilder( StringBuilder&& other ) noexcept;
 
 		//----------------------------------------------
 		// Destruction
 		//----------------------------------------------
 
 		/** @brief Destructor */
-		~DynamicStringBuffer() = default;
+		~StringBuilder() = default;
 
 		//----------------------------------------------
 		// Assignment
@@ -146,17 +134,17 @@ namespace nfx::string
 
 		/**
 		 * @brief Copy assignment operator
-		 * @param other The DynamicStringBuffer to copy from
-		 * @return Reference to this DynamicStringBuffer after assignment
+		 * @param other The StringBuilder to copy from
+		 * @return Reference to this StringBuilder after assignment
 		 */
-		DynamicStringBuffer& operator=( const DynamicStringBuffer& other );
+		StringBuilder& operator=( const StringBuilder& other );
 
 		/**
 		 * @brief Move assignment operator
-		 * @param other The DynamicStringBuffer to move from
-		 * @return Reference to this DynamicStringBuffer after assignment
+		 * @param other The StringBuilder to move from
+		 * @return Reference to this StringBuilder after assignment
 		 */
-		DynamicStringBuffer& operator=( DynamicStringBuffer&& other ) noexcept;
+		StringBuilder& operator=( StringBuilder&& other ) noexcept;
 
 		//----------------------------------------------
 		// Capacity and size information
@@ -168,7 +156,7 @@ namespace nfx::string
 		 * @details Returns actual content size, not allocated capacity
 		 * @note This function is marked [[nodiscard]] - the return value should not be ignored
 		 */
-		[[nodiscard]] size_t size() const noexcept;
+		[[nodiscard]] inline size_t size() const noexcept;
 
 		/**
 		 * @brief Get current buffer capacity in bytes
@@ -176,14 +164,50 @@ namespace nfx::string
 		 * @details Capacity may be larger than size to avoid frequent reallocations
 		 * @note This function is marked [[nodiscard]] - the return value should not be ignored
 		 */
-		[[nodiscard]] size_t capacity() const noexcept;
+		[[nodiscard]] inline size_t capacity() const noexcept;
 
 		/**
 		 * @brief Check if buffer is empty
 		 * @return true if buffer contains no data, false otherwise
 		 * @note This function is marked [[nodiscard]] - the return value should not be ignored
 		 */
-		[[nodiscard]] bool isEmpty() const noexcept;
+		[[nodiscard]] inline bool isEmpty() const noexcept;
+
+		//----------------------------------------------
+		// Data access
+		//----------------------------------------------
+
+		/**
+		 * @brief Get mutable pointer to buffer data
+		 * @return Pointer to first byte of buffer data
+		 * @details Provides direct memory access for high-performance operations
+		 * @note This function is marked [[nodiscard]] - the return value should not be ignored
+		 */
+		[[nodiscard]] inline char* data() noexcept;
+
+		/**
+		 * @brief Get immutable pointer to buffer data
+		 * @return Const pointer to first byte of buffer data
+		 * @details Safe read-only access to buffer contents
+		 * @note This function is marked [[nodiscard]] - the return value should not be ignored
+		 */
+		[[nodiscard]] inline const char* data() const noexcept;
+
+		/**
+		 * @brief Access buffer element by index (mutable)
+		 * @param index Zero-based index of element to access
+		 * @return Reference to element at specified index
+		 * @details No bounds checking - undefined behavior if index >= size()
+		 */
+		inline char& operator[]( size_t index );
+
+		/**
+		 * @brief Access buffer element by index (immutable)
+		 * @param index Zero-based index of element to access
+		 * @return Const reference to element at specified index
+		 * @details No bounds checking - undefined behavior if index >= size()
+		 */
+		inline const char& operator[]( size_t index ) const;
 
 		//----------------------------------------------
 		// Buffer management
@@ -193,7 +217,7 @@ namespace nfx::string
 		 * @brief Clear buffer content without deallocating memory
 		 * @details Sets size to 0 but preserves allocated capacity for reuse
 		 */
-		void clear() noexcept;
+		inline void clear() noexcept;
 
 		/**
 		 * @brief Reserve minimum capacity for buffer
@@ -212,279 +236,7 @@ namespace nfx::string
 		void resize( size_t newSize );
 
 		//----------------------------------------------
-		// Data access
-		//----------------------------------------------
-
-		/**
-		 * @brief Get mutable pointer to buffer data
-		 * @return Pointer to first byte of buffer data
-		 * @details Provides direct memory access for high-performance operations
-		 * @note This function is marked [[nodiscard]] - the return value should not be ignored
-		 */
-		[[nodiscard]] char* data() noexcept;
-
-		/**
-		 * @brief Get immutable pointer to buffer data
-		 * @return Const pointer to first byte of buffer data
-		 * @details Safe read-only access to buffer contents
-		 * @note This function is marked [[nodiscard]] - the return value should not be ignored
-		 */
-		[[nodiscard]] const char* data() const noexcept;
-
-		/**
-		 * @brief Access buffer element by index (mutable)
-		 * @param index Zero-based index of element to access
-		 * @return Reference to element at specified index
-		 * @details No bounds checking - undefined behavior if index >= size()
-		 */
-		char& operator[]( size_t index );
-
-		/**
-		 * @brief Access buffer element by index (immutable)
-		 * @param index Zero-based index of element to access
-		 * @return Const reference to element at specified index
-		 * @details No bounds checking - undefined behavior if index >= size()
-		 */
-		const char& operator[]( size_t index ) const;
-
-		//----------------------------------------------
 		// Content manipulation
-		//----------------------------------------------
-
-		/**
-		 * @brief Append string_view content to buffer
-		 * @param str String view to append
-		 * @details Efficient append without copying string data
-		 * @throws std::bad_alloc if buffer expansion fails
-		 */
-		void append( std::string_view str );
-
-		/**
-		 * @brief Append std::string content to buffer
-		 * @param str String to append
-		 * @details Convenience overload for std::string
-		 * @throws std::bad_alloc if buffer expansion fails
-		 */
-		void append( const std::string& str );
-
-		/**
-		 * @brief Append null-terminated C string to buffer
-		 * @param str Null-terminated string to append
-		 * @details Safe handling of nullptr (no-op)
-		 * @throws std::bad_alloc if buffer expansion fails
-		 */
-		void append( const char* str );
-
-		/**
-		 * @brief Append single character to buffer
-		 * @param c Character to append
-		 * @details Efficient single-character append
-		 * @throws std::bad_alloc if buffer expansion fails
-		 */
-		void append( char c );
-
-		//----------------------------------------------
-		// String conversion
-		//----------------------------------------------
-
-		/**
-		 * @brief Convert buffer content to std::string
-		 * @return String copy of buffer content
-		 * @details Creates new string object - consider toStringView() for read-only access
-		 */
-		[[nodiscard]] std::string toString() const;
-
-		/**
-		 * @brief Get string_view of buffer content
-		 * @return String view referencing buffer data
-		 * @details Zero-copy access - view becomes invalid if buffer is modified
-		 * @note This function is marked [[nodiscard]] - the return value should not be ignored
-		 */
-		[[nodiscard]] std::string_view toStringView() const noexcept;
-
-		//----------------------------------------------
-		// Iterator interface
-		//----------------------------------------------
-
-		/** @brief Character type for iterator compatibility */
-		using value_type = char;
-
-		/** @brief Mutable iterator type for buffer traversal */
-		using Iterator = char*;
-
-		/** @brief Immutable iterator type for buffer traversal */
-		using ConstIterator = const char*;
-
-		/** @brief Type alias for iterator */
-		using iterator = Iterator;
-
-		/** @brief Type alias for const iterator */
-		using const_iterator = ConstIterator;
-
-		/**
-		 * @brief Get mutable iterator to beginning of buffer
-		 * @return Iterator pointing to first element
-		 * @details Enables range-based for loops and STL algorithms
-		 * @note This function is marked [[nodiscard]] - the return value should not be ignored
-		 */
-		[[nodiscard]] Iterator begin() noexcept;
-
-		/**
-		 * @brief Get immutable iterator to beginning of buffer
-		 * @return Const iterator pointing to first element
-		 * @details Safe read-only iteration over buffer contents
-		 * @note This function is marked [[nodiscard]] - the return value should not be ignored
-		 */
-		[[nodiscard]] ConstIterator begin() const noexcept;
-
-		/**
-		 * @brief Get mutable iterator to end of buffer
-		 * @return Iterator pointing one past last element
-		 * @details Standard STL end iterator semantics
-		 * @note This function is marked [[nodiscard]] - the return value should not be ignored
-		 */
-		[[nodiscard]] Iterator end() noexcept;
-
-		/**
-		 * @brief Get immutable iterator to end of buffer
-		 * @return Const iterator pointing one past last element
-		 * @details Standard STL end iterator semantics
-		 * @note This function is marked [[nodiscard]] - the return value should not be ignored
-		 */
-		[[nodiscard]] ConstIterator end() const noexcept;
-
-	private:
-		//----------------------------------------------
-		// Small buffer optimization constants
-		//----------------------------------------------
-
-		/** @brief Stack buffer size optimized for typical string operations */
-		static constexpr size_t STACK_BUFFER_SIZE = 256;
-
-		/** @brief Growth factor for heap allocation */
-		static constexpr auto GROWTH_FACTOR = 2.0;
-
-		//----------------------------------------------
-		// Private members
-		//----------------------------------------------
-
-		/** @brief Stack-allocated buffer for small strings */
-		alignas( char ) char m_stackBuffer[STACK_BUFFER_SIZE];
-
-		/** @brief Heap-allocated buffer for large strings */
-		std::unique_ptr<char[]> m_heapBuffer;
-
-		/** @brief Current size of data in buffer */
-		size_t m_size;
-
-		/** @brief Current capacity of buffer */
-		size_t m_capacity;
-
-		/** @brief True if using heap buffer, false if using stack buffer */
-		bool m_onHeap;
-
-		//----------------------------------------------
-		// Private methods
-		//----------------------------------------------
-
-		/**
-		 * @brief Ensures buffer has at least the specified capacity
-		 * @param neededCapacity Minimum required capacity
-		 */
-		void ensureCapacity( size_t neededCapacity );
-
-		/**
-		 * @brief Returns pointer to current buffer (stack or heap)
-		 * @return Pointer to active buffer
-		 */
-		char* currentBuffer() noexcept;
-
-		/**
-		 * @brief Returns const pointer to current buffer (stack or heap)
-		 * @return Const pointer to active buffer
-		 */
-		const char* currentBuffer() const noexcept;
-	};
-
-	//=====================================================================
-	// StringBuilder class
-	//=====================================================================
-
-	/**
-	 * @brief High-performance string builder with fluent interface and efficient memory management
-	 * @details Provides a convenient wrapper around DynamicStringBuffer with stream-like operators
-	 *          for intuitive string construction. Features efficient append operations, iterator
-	 *          support, and automatic memory management through the underlying buffer.
-	 *
-	 * @note This class is a lightweight wrapper that references an underlying DynamicStringBuffer.
-	 *       It does not own the buffer memory - use StringBuilderPool::lease() for proper RAII management.
-	 *
-	 * @warning Not thread-safe - external synchronization required for concurrent access.
-	 *          Multiple StringBuilder instances should not reference the same buffer concurrently.
-	 *
-	 * @see StringBuilderPool for the recommended way to obtain StringBuilder instances
-	 * @see StringBuilderLease for RAII management of pooled buffers
-	 * @see DynamicStringBuffer for the underlying buffer implementation
-	 */
-	class StringBuilder final
-	{
-		friend class StringBuilderLease;
-		friend class std::back_insert_iterator<StringBuilder>;
-
-		//----------------------------------------------
-		// Construction
-		//----------------------------------------------
-	private:
-		/** @brief Constructs StringBuilder wrapper around memory buffer */
-		inline explicit StringBuilder( DynamicStringBuffer& buffer );
-
-	public:
-		/** @brief Default constructor */
-		StringBuilder() = delete;
-
-		/** @brief Copy constructor */
-		StringBuilder( const StringBuilder& ) = default;
-
-		/** @brief Move constructor */
-		StringBuilder( StringBuilder&& ) noexcept = delete;
-
-		//----------------------------------------------
-		// Destruction
-		//----------------------------------------------
-
-		/** @brief Destructor */
-		~StringBuilder() = default;
-
-		//----------------------------------------------
-		// Assignment
-		//----------------------------------------------
-
-		/** @brief Copy assignment operator */
-		StringBuilder& operator=( const StringBuilder& ) = delete;
-
-		/** @brief Move assignment operator */
-		StringBuilder& operator=( StringBuilder&& ) noexcept = delete;
-
-		//----------------------------------------------
-		// Array access operators
-		//----------------------------------------------
-
-		/**
-		 * @brief Provides read-write access to character at specified index
-		 * @param index Zero-based character index
-		 * @return Reference to character at the specified position
-		 */
-		inline char& operator[]( size_t index );
-
-		/**
-		 * @brief Provides read-only access to character at specified index
-		 * @param index Zero-based character index
-		 * @return Const reference to character at the specified position
-		 */
-		inline const char& operator[]( size_t index ) const;
-
-		//----------------------------------------------
-		// String append operations
 		//----------------------------------------------
 
 		/**
@@ -492,7 +244,7 @@ namespace nfx::string
 		 * @param str String view to append
 		 * @return Reference to this StringBuilder for chaining
 		 */
-		inline StringBuilder& append( std::string_view str );
+		StringBuilder& append( std::string_view str );
 
 		/**
 		 * @brief Appends std::string contents to the buffer
@@ -725,28 +477,34 @@ namespace nfx::string
 		inline StringBuilder& format( std::format_string<Args...> fmt, Args&&... args );
 
 		//----------------------------------------------
-		// Size and capacity management
+		// String conversion
 		//----------------------------------------------
 
 		/**
-		 * @brief Returns current buffer size in characters
-		 * @return Number of characters currently stored in the buffer
+		 * @brief Convert buffer content to std::string
+		 * @return String copy of buffer content
+		 * @details Creates new string object - consider toStringView() for read-only access
 		 */
-		inline size_t length() const noexcept;
+		[[nodiscard]] inline std::string toString() const;
 
 		/**
-		 * @brief Reserve minimum capacity for underlying buffer
-		 * @param newCapacity Minimum desired capacity in bytes
-		 * @throws std::bad_alloc if memory allocation fails
+		 * @brief Get string_view of buffer content
+		 * @return String view referencing buffer data
+		 * @details Zero-copy access - view becomes invalid if buffer is modified
+		 * @note This function is marked [[nodiscard]] - the return value should not be ignored
 		 */
-		inline void reserve( size_t newCapacity );
+		[[nodiscard]] inline std::string_view toStringView() const noexcept;
+
+		//----------------------------------------------
+		// STL support
+		//----------------------------------------------
 
 		/**
-		 * @brief Resizes buffer to specified character count
-		 * @param newSize New buffer size in characters
-		 * @throws std::bad_alloc if memory allocation fails
+		 * @brief Appends single character to the buffer (for STL compatibility)
+		 * @param c Character to append
+		 * @details Inline alias for append(char) to support std::back_inserter
 		 */
-		inline void resize( size_t newSize );
+		inline void push_back( char c );
 
 		//----------------------------------------------
 		// Iterator interface
@@ -768,345 +526,96 @@ namespace nfx::string
 		using const_iterator = ConstIterator;
 
 		/**
-		 * @brief Returns mutable iterator to beginning of character sequence
-		 * @return Iterator pointing to the first character in the buffer
-		 */
-		inline Iterator begin();
-
-		/**
-		 * @brief Returns const iterator to beginning of character sequence
-		 * @return Const iterator pointing to the first character in the buffer
-		 */
-		inline ConstIterator begin() const;
-
-		/**
-		 * @brief Returns mutable iterator to end of character sequence
-		 * @return Iterator pointing one past the last character in the buffer
-		 */
-		inline Iterator end();
-
-		/**
-		 * @brief Returns const iterator to end of character sequence
-		 * @return Const iterator pointing one past the last character in the buffer
-		 */
-		inline ConstIterator end() const;
-
-	private:
-		//----------------------------------------------
-		// Container interface (for std::back_inserter support)
-		//----------------------------------------------
-
-		/**
-		 * @brief Alias for append(char) to support std::back_inserter
-		 * @param c Character to append
-		 * @details Redirects to append(char) for consistency
-		 */
-		inline void push_back( char c ) { append( c ); }
-
-		//----------------------------------------------
-		// Private member variables
-		//----------------------------------------------
-
-		/** @brief Reference to the underlying buffer */
-		DynamicStringBuffer& m_buffer;
-	};
-
-	//=====================================================================
-	// StringBuilderLease class
-	//=====================================================================
-
-	/**
-	 * @brief RAII lease wrapper for pooled StringBuilder buffers with automatic resource management
-	 * @details Provides exclusive access to a pooled DynamicStringBuffer through RAII semantics.
-	 *          Automatically returns the buffer to the pool when the lease is destroyed, ensuring
-	 *          optimal memory reuse and preventing resource leaks. Features move-only semantics
-	 *          for safe transfer of ownership and convenient access methods.
-	 *
-	 * @note This class implements move-only semantics - copying is disabled to prevent
-	 *       multiple ownership of the same buffer. Use std::move() for ownership transfer.
-	 *
-	 * @warning Not thread-safe - external synchronization required for concurrent access.
-	 *          Do not share lease instances between threads without proper synchronization.
-	 *
-	 * @see StringBuilderPool::lease() for obtaining lease instances
-	 * @see StringBuilder for the high-level string building interface
-	 * @see DynamicStringBuffer for the underlying buffer implementation
-	 */
-	class StringBuilderLease final
-	{
-		friend class StringBuilderPool;
-
-		//----------------------------------------------
-		// Construction
-		//----------------------------------------------
-	private:
-		/** @brief Constructs lease with pooled buffer ownership */
-		inline explicit StringBuilderLease( DynamicStringBuffer* buffer );
-
-	public:
-		/** @brief Default constructor */
-		StringBuilderLease() = delete;
-
-		/** @brief Copy constructor */
-		StringBuilderLease( const StringBuilderLease& ) = delete;
-
-		/**
-		 * @brief Move constructor
-		 * @param other The StringBuilderLease to move from
-		 */
-		inline StringBuilderLease( StringBuilderLease&& other ) noexcept;
-
-		//----------------------------------------------
-		// Destruction
-		//----------------------------------------------
-
-		/** @brief Destructor */
-		~StringBuilderLease();
-
-		//----------------------------------------------
-		// Assignment
-		//----------------------------------------------
-
-		/** @brief Copy assignment operator */
-		StringBuilderLease& operator=( const StringBuilderLease& ) = delete;
-
-		/**
-		 * @brief Move assignment operator
-		 * @param other The StringBuilderLease to move from
-		 * @return Reference to this StringBuilderLease after assignment
-		 */
-		inline StringBuilderLease& operator=( StringBuilderLease&& other ) noexcept;
-
-		//----------------------------------------------
-		// Public interface methods
-		//----------------------------------------------
-
-		/**
-		 * @brief Creates StringBuilder wrapper for buffer manipulation
-		 * @return StringBuilder instance wrapping the leased buffer
+		 * @brief Get mutable iterator to beginning of buffer
+		 * @return Iterator pointing to first element
+		 * @details Enables range-based for loops and STL algorithms
 		 * @note This function is marked [[nodiscard]] - the return value should not be ignored
 		 */
-		[[nodiscard]] inline StringBuilder create();
+		[[nodiscard]] inline Iterator begin() noexcept;
 
 		/**
-		 * @brief Provides direct access to underlying memory buffer
-		 * @return Reference to the underlying DynamicStringBuffer
+		 * @brief Get immutable iterator to beginning of buffer
+		 * @return Const iterator pointing to first element
+		 * @details Safe read-only iteration over buffer contents
 		 * @note This function is marked [[nodiscard]] - the return value should not be ignored
 		 */
-		[[nodiscard]] inline DynamicStringBuffer& buffer();
+		[[nodiscard]] inline ConstIterator begin() const noexcept;
 
 		/**
-		 * @brief Converts buffer contents to std::string
-		 * @return String copy of the buffer contents
+		 * @brief Get mutable iterator to end of buffer
+		 * @return Iterator pointing one past last element
+		 * @details Standard STL end iterator semantics
 		 * @note This function is marked [[nodiscard]] - the return value should not be ignored
 		 */
-		[[nodiscard]] inline std::string toString() const;
+		[[nodiscard]] inline Iterator end() noexcept;
+
+		/**
+		 * @brief Get immutable iterator to end of buffer
+		 * @return Const iterator pointing one past last element
+		 * @details Standard STL end iterator semantics
+		 * @note This function is marked [[nodiscard]] - the return value should not be ignored
+		 */
+		[[nodiscard]] inline ConstIterator end() const noexcept;
 
 	private:
 		//----------------------------------------------
-		// Private implementation methods
+		// Private members
 		//----------------------------------------------
 
-		/** @brief Returns buffer to pool and invalidates lease */
-		void dispose();
+		/** @brief Stack buffer size optimized for typical string operations */
+		static constexpr size_t STACK_BUFFER_SIZE = 256;
 
-		/** @brief Throws exception for invalid lease access */
-		[[noreturn]] void throwInvalidOperation() const;
+		/**
+		 * @brief Growth strategy constants
+		 * @details Growth strategy based on buffer size:
+		 *          - Small buffers (< GROWTH_THRESHOLD): 2.0x multiplicative growth (aggressive for frequent appends)
+		 *          - Large buffers (≥ GROWTH_THRESHOLD): 1.5x multiplicative growth (standard exponential growth)
+		 *
+		 * Rationale:
+		 * - 2.0x for small: Minimize reallocation count during initial growth
+		 * - 1.5x for large: Balance memory overhead vs reallocation frequency
+		 * - Growth threshold at 8KB provides optimal balance based on benchmarks
+		 */
+		static constexpr size_t GROWTH_THRESHOLD = 8192;
+		static constexpr double AGGRESSIVE_GROWTH_FACTOR = 2.0;
+		static constexpr double STANDARD_GROWTH_FACTOR = 1.5;
+
+		/** @brief Stack-allocated buffer for small strings */
+		alignas( char ) char m_stackBuffer[STACK_BUFFER_SIZE];
+
+		/** @brief Heap-allocated buffer for large strings */
+		std::unique_ptr<char[]> m_heapBuffer;
+
+		/** @brief Current size of data in buffer */
+		size_t m_size;
+
+		/** @brief Current capacity of buffer */
+		size_t m_capacity;
+
+		/** @brief True if using heap buffer, false if using stack buffer */
+		bool m_onHeap;
 
 		//----------------------------------------------
-		// Private member variables
-		//----------------------------------------------
-
-		/** @brief Pointer to the pooled memory buffer */
-		DynamicStringBuffer* m_buffer;
-
-		/** @brief Flag indicating if the lease is valid and buffer is accessible */
-		bool m_valid;
-	};
-
-	//=====================================================================
-	// StringBuilderPool class
-	//=====================================================================
-
-	/**
-	 * @brief Thread-safe memory pool for high-performance StringBuilder instances with optimized allocation strategy
-	 * @details Implements a three-tier pooling system for DynamicStringBuffer instances
-	 *          to minimize allocation overhead in high-frequency string building scenarios. Features
-	 *          thread-local caching, shared cross-thread pooling, and comprehensive statistics tracking.
-	 *          Designed as a singleton with static factory methods for global access.
-	 *
-	 * ## Three-Tier Pooling Architecture:
-	 *
-	 * ```
-	 * StringBuilderPool::lease() Buffer Acquisition Strategy:
-	 * ┌─────────────────────────────────────────────────────────────┐
-	 * │                      Client Request                         │
-	 * │               StringBuilderPool::lease()                    │
-	 * └─────────────────────────────────────────────────────────────┘
-	 *                              ↓ (try first)
-	 * ┌─────────────────────────────────────────────────────────────┐
-	 * │               Tier 1: Thread-Local Cache                    │ ← Fastest (no locks)
-	 * │  ┌─────────────────────────────────────────────────────┐    │
-	 * │  │     thread_local DynamicStringBuffer* cache         │    │
-	 * │  │       - Zero synchronization overhead               │    │
-	 * │  │       - Immediate buffer availability               │    │
-	 * │  │       - Perfect for single-threaded hotpaths        │    │
-	 * │  └─────────────────────────────────────────────────────┘    │
-	 * └─────────────────────────────────────────────────────────────┘
-	 *                              ↓ (on miss - cache empty)
-	 * ┌─────────────────────────────────────────────────────────────┐
-	 * │            Tier 2: Shared Cross-Thread Pool                 │ ← Fast (mutex-protected)
-	 * │  ┌─────────────────────────────────────────────────────┐    │
-	 * │  │   DynamicStringBufferPool (singleton)               │    │
-	 * │  │       - Mutex-protected buffer queue                │    │
-	 * │  │       - Cross-thread buffer sharing                 │    │
-	 * │  │       - Size-limited to prevent bloat               │    │
-	 * │  └─────────────────────────────────────────────────────┘    │
-	 * └─────────────────────────────────────────────────────────────┘
-	 *                              ↓ (on miss - pool empty)
-	 * ┌─────────────────────────────────────────────────────────────┐
-	 * │                Tier 3: New Allocation                       │ ← Fallback (heap allocation)
-	 * │  ┌─────────────────────────────────────────────────────┐    │
-	 * │  │   new DynamicStringBuffer(optimal_size)             │    │
-	 * │  │       - Pre-sized for typical usage patterns        │    │
-	 * │  │       - Small Buffer Optimization (256-byte stack)  │    │
-	 * │  │       - 1.5x growth factor for cache efficiency     │    │
-	 * │  └─────────────────────────────────────────────────────┘    │
-	 * └─────────────────────────────────────────────────────────────┘
-	 *
-	 * Buffer Return Process (via StringBuilderLease destructor):
-	 * ┌─────────────────────────────────────────────────────────────┐
-	 * │  1. Clear buffer content (zero-cost operation)              │
-	 * │  2. Check size limits (prevent memory bloat)                │
-	 * │  3. Return to thread-local cache (if space available)       │
-	 * │  4. Return to shared pool (if thread-local full)            │
-	 * │  5. Deallocate (if both pools full or buffer too large)     │
-	 * └─────────────────────────────────────────────────────────────┘
-	 * ```
-	 *
-	 * @note This class uses a singleton pattern with static methods - no instantiation required.
-	 *       All pool operations are thread-safe and optimized for concurrent access patterns.
-	 *
-	 * @warning Pool buffers have size limits to prevent memory bloat - extremely large buffers
-	 *          may not be returned to the pool and will be deallocated normally.
-	 *
-	 * @see StringBuilderLease for RAII buffer management
-	 * @see StringBuilder for the high-level string building interface
-	 * @see DynamicStringBuffer for the underlying buffer implementation
-	 */
-	class StringBuilderPool final
-	{
-	public:
-		//----------------------------------------------
-		// Pool statistics structure
-		//----------------------------------------------
-
-		/** @brief Pool performance statistics for external access */
-		struct PoolStatistics
-		{
-			/** @brief Number of successful buffer retrievals from thread-local cache */
-			uint64_t threadLocalHits;
-
-			/** @brief Number of successful buffer retrievals from shared cross-thread pool */
-			uint64_t dynamicStringBufferPoolHits;
-
-			/** @brief Number of new buffer allocations when pools were empty */
-			uint64_t newAllocations;
-
-			/** @brief Total number of buffer requests made to the pool */
-			uint64_t totalRequests;
-
-			/** @brief Cache hit rate as a percentage (0.0 to 1.0) */
-			double hitRate;
-		};
-
-	private:
-		//----------------------------------------------
-		// Construction
-		//----------------------------------------------
-
-		/** @brief Private constructor for singleton pattern */
-		StringBuilderPool() = default;
-
-	public:
-		//----------------------------------------------
-		// Static factory methods
+		// Private methods
 		//----------------------------------------------
 
 		/**
-		 * @brief Creates a new StringBuilder lease with an optimally sourced memory buffer
-		 * @return StringBuilderLease managing a pooled buffer with automatic cleanup
-		 *
-		 * This is the primary factory method for obtaining StringBuilder instances.
-		 * The buffer is sourced using a three-tier optimization strategy:
-		 * 1. Thread-local cache (fastest, zero synchronization overhead)
-		 * 2. Shared cross-thread pool (fast, mutex-protected access)
-		 * 3. New allocation (fallback, pre-sized for optimal performance)
-		 *
-		 * The returned lease automatically returns the buffer to the pool when
-		 * destroyed, ensuring optimal memory reuse and preventing leaks.
-		 *
-		 * This method is thread-safe and optimized for high-frequency usage patterns.
-		 * Buffers are automatically cleared before reuse and size-limited to prevent bloat.
+		 * @brief Ensures buffer has at least the specified capacity
+		 * @param neededCapacity Minimum required capacity
 		 */
-		[[nodiscard]] static StringBuilderLease lease();
+		void ensureCapacity( size_t neededCapacity );
 
 		/**
-		 * @brief Creates a new StringBuilder lease with pre-allocated capacity hint
-		 * @param capacityHint Minimum desired buffer capacity in bytes
-		 * @return StringBuilderLease managing a pooled buffer with automatic cleanup
-		 *
-		 * Pre-allocates buffer capacity to avoid reallocations during string construction.
-		 * The buffer is sourced using the same three-tier optimization strategy as lease(),
-		 * but with an additional reserve() call to ensure sufficient capacity.
-		 *
-		 * Use this overload when the approximate final size is known in advance to minimize
-		 * memory allocations and improve performance.
-		 *
-		 * Example:
-		 * @code
-		 * // Building a SQL query (~500 bytes expected)
-		 * auto lease = StringBuilderPool::lease(512);
-		 * auto builder = lease.create();
-		 * builder << "SELECT * FROM users WHERE ...";
-		 * @endcode
-		 *
-		 * This method is thread-safe and optimized for high-frequency usage patterns.
-		 * Buffers are automatically cleared before reuse and size-limited to prevent bloat.
-		 *
-		 * @note The hint is a minimum - the actual capacity may be larger due to pooling
-		 *       or growth factor optimizations. Existing pooled buffers retain their capacity.
+		 * @brief Returns pointer to current buffer (stack or heap)
+		 * @return Pointer to active buffer
 		 */
-		[[nodiscard]] static StringBuilderLease lease( size_t capacityHint );
-
-		//----------------------------
-		// Statistics methods
-		//----------------------------
+		inline char* currentBuffer() noexcept;
 
 		/**
-		 * @brief Gets current pool statistics
-		 * @return Current pool performance statistics structure
+		 * @brief Returns const pointer to current buffer (stack or heap)
+		 * @return Const pointer to active buffer
 		 */
-		static PoolStatistics stats() noexcept;
-
-		/** @brief Resets pool statistics */
-		static void resetStats() noexcept;
-
-		//----------------------------
-		// Lease management
-		//----------------------------
-
-		/**
-		 * @brief Clears all buffers from the pool and returns the count of cleared buffers
-		 * @return Number of buffers that were cleared from the pool
-		 */
-		static size_t clear();
-
-		/**
-		 * @brief Gets current number of buffers stored in the pool
-		 * @return Number of buffers currently available in the pool
-		 */
-		static size_t size() noexcept;
+		inline const char* currentBuffer() const noexcept;
 	};
 } // namespace nfx::string
 

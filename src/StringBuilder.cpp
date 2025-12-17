@@ -24,10 +24,15 @@
 
 /**
  * @file StringBuilder.cpp
- * @brief Implementation file for StringBuilder methods
+ * @brief Implementation of StringBuilder methods with SIMD-optimized string operations
  */
 
+#include "nfx/string/StringBuilder.h"
+
+#include <iostream>
+
 #include <algorithm>
+#include <charconv>
 #include <cstring>
 
 #ifdef _MSC_VER
@@ -36,20 +41,33 @@
 #	include <immintrin.h>
 #endif
 
-#include "nfx/string/StringBuilder.h"
-#include "DynamicStringBufferPool.h"
-
 namespace nfx::string
 {
 	//=====================================================================
-	// DynamicStringBuffer class
+	// Internal constants
+	//=====================================================================
+
+	namespace
+	{
+		constexpr size_t SMALL_COPY_THRESHOLD = 16; // Small strings use simple memcpy (cache-friendly)
+#if defined( __AVX2__ )
+		constexpr size_t AVX2_VECTOR_SIZE = 32;	 // 256-bit AVX2 register
+		constexpr size_t AVX2_UNROLL_SIZE = 128; // 4× AVX2 vectors for optimal unrolling
+#elif defined( __SSE2__ ) || ( defined( _MSC_VER ) && ( defined( _M_X64 ) || defined( _M_IX86 ) ) )
+		constexpr size_t SSE2_VECTOR_SIZE = 16; // 128-bit SSE2 register
+		constexpr size_t SSE2_UNROLL_SIZE = 64; // 4× SSE2 vectors for optimal unrolling
+#endif
+	} // anonymous namespace
+
+	//=====================================================================
+	// StringBuilder class
 	//=====================================================================
 
 	//----------------------------------------------
 	// Construction
 	//----------------------------------------------
 
-	DynamicStringBuffer::DynamicStringBuffer()
+	StringBuilder::StringBuilder()
 		: m_heapBuffer{ nullptr },
 		  m_size{ 0 },
 		  m_capacity{ STACK_BUFFER_SIZE },
@@ -57,9 +75,10 @@ namespace nfx::string
 	{
 	}
 
-	DynamicStringBuffer::DynamicStringBuffer( size_t initialCapacity )
+	StringBuilder::StringBuilder( size_t initialCapacity )
 		: m_heapBuffer{ nullptr },
-		  m_size{ 0 }, m_capacity{ STACK_BUFFER_SIZE },
+		  m_size{ 0 },
+		  m_capacity{ STACK_BUFFER_SIZE },
 		  m_onHeap{ false }
 	{
 		if ( initialCapacity > STACK_BUFFER_SIZE )
@@ -70,7 +89,7 @@ namespace nfx::string
 		}
 	}
 
-	DynamicStringBuffer::DynamicStringBuffer( const DynamicStringBuffer& other )
+	StringBuilder::StringBuilder( const StringBuilder& other )
 		: m_heapBuffer{ nullptr },
 		  m_size{ other.m_size },
 		  m_capacity{ other.m_capacity },
@@ -87,7 +106,7 @@ namespace nfx::string
 		}
 	}
 
-	DynamicStringBuffer::DynamicStringBuffer( DynamicStringBuffer&& other ) noexcept
+	StringBuilder::StringBuilder( StringBuilder&& other ) noexcept
 		: m_heapBuffer{ std::move( other.m_heapBuffer ) },
 		  m_size{ other.m_size },
 		  m_capacity{ other.m_capacity },
@@ -107,7 +126,7 @@ namespace nfx::string
 	// Assignment
 	//----------------------------------------------
 
-	DynamicStringBuffer& DynamicStringBuffer::operator=( const DynamicStringBuffer& other )
+	StringBuilder& StringBuilder::operator=( const StringBuilder& other )
 	{
 		if ( this != &other )
 		{
@@ -138,7 +157,7 @@ namespace nfx::string
 		return *this;
 	}
 
-	DynamicStringBuffer& DynamicStringBuffer::operator=( DynamicStringBuffer&& other ) noexcept
+	StringBuilder& StringBuilder::operator=( StringBuilder&& other ) noexcept
 	{
 		if ( this != &other )
 		{
@@ -160,34 +179,10 @@ namespace nfx::string
 	}
 
 	//----------------------------------------------
-	// Capacity and size information
-	//----------------------------------------------
-
-	size_t DynamicStringBuffer::size() const noexcept
-	{
-		return m_size;
-	}
-
-	size_t DynamicStringBuffer::capacity() const noexcept
-	{
-		return m_capacity;
-	}
-
-	bool DynamicStringBuffer::isEmpty() const noexcept
-	{
-		return m_size == 0;
-	}
-
-	//----------------------------------------------
 	// Buffer management
 	//----------------------------------------------
 
-	void DynamicStringBuffer::clear() noexcept
-	{
-		m_size = 0;
-	}
-
-	void DynamicStringBuffer::reserve( size_t newCapacity )
+	void StringBuilder::reserve( size_t newCapacity )
 	{
 		if ( newCapacity > m_capacity )
 		{
@@ -195,45 +190,21 @@ namespace nfx::string
 		}
 	}
 
-	void DynamicStringBuffer::resize( size_t newSize )
+	void StringBuilder::resize( size_t newSize )
 	{
 		ensureCapacity( newSize );
 		m_size = newSize;
 	}
 
 	//----------------------------------------------
-	// Data access
-	//----------------------------------------------
-
-	char* DynamicStringBuffer::data() noexcept
-	{
-		return currentBuffer();
-	}
-
-	const char* DynamicStringBuffer::data() const noexcept
-	{
-		return currentBuffer();
-	}
-
-	char& DynamicStringBuffer::operator[]( size_t index )
-	{
-		return currentBuffer()[index];
-	}
-
-	const char& DynamicStringBuffer::operator[]( size_t index ) const
-	{
-		return currentBuffer()[index];
-	}
-
-	//----------------------------------------------
 	// Content manipulation
 	//----------------------------------------------
 
-	void DynamicStringBuffer::append( std::string_view str )
+	StringBuilder& StringBuilder::append( std::string_view str )
 	{
 		if ( str.empty() ) [[unlikely]]
 		{
-			return;
+			return *this;
 		}
 
 		const size_t len = str.size();
@@ -248,19 +219,19 @@ namespace nfx::string
 		const char* src = str.data();
 
 		// Fast path for small string
-		if ( len <= 16 ) [[likely]]
+		if ( len <= SMALL_COPY_THRESHOLD ) [[likely]]
 		{
 			std::memcpy( dest, src, len );
 		}
+#if defined( __AVX2__ )
 
-#if defined( __AVX2__ ) || ( defined( _MSC_VER ) && defined( __AVX2__ ) )
 		// For very large copies, use unrolled AVX2 loop
-		else if ( len >= 128 )
+		else if ( len >= AVX2_UNROLL_SIZE )
 		{
 			size_t remaining = len;
 
 			// Process 128 bytes (4× AVX2 vectors) per iteration
-			while ( remaining >= 128 )
+			while ( remaining >= AVX2_UNROLL_SIZE )
 			{
 				__m256i chunk0 = _mm256_loadu_si256( reinterpret_cast<const __m256i*>( src + 0 ) );
 				__m256i chunk1 = _mm256_loadu_si256( reinterpret_cast<const __m256i*>( src + 32 ) );
@@ -272,19 +243,19 @@ namespace nfx::string
 				_mm256_storeu_si256( reinterpret_cast<__m256i*>( dest + 64 ), chunk2 );
 				_mm256_storeu_si256( reinterpret_cast<__m256i*>( dest + 96 ), chunk3 );
 
-				src += 128;
-				dest += 128;
-				remaining -= 128;
+				src += AVX2_UNROLL_SIZE;
+				dest += AVX2_UNROLL_SIZE;
+				remaining -= AVX2_UNROLL_SIZE;
 			}
 
 			// Handle remaining 32-byte chunks
-			while ( remaining >= 32 )
+			while ( remaining >= AVX2_VECTOR_SIZE )
 			{
 				__m256i chunk = _mm256_loadu_si256( reinterpret_cast<const __m256i*>( src ) );
 				_mm256_storeu_si256( reinterpret_cast<__m256i*>( dest ), chunk );
-				src += 32;
-				dest += 32;
-				remaining -= 32;
+				src += AVX2_VECTOR_SIZE;
+				dest += AVX2_VECTOR_SIZE;
+				remaining -= AVX2_VECTOR_SIZE;
 			}
 
 			// Handle tail
@@ -294,16 +265,16 @@ namespace nfx::string
 			}
 		}
 		// Medium-sized copies: single AVX2 vector loop
-		else if ( len >= 32 )
+		else if ( len >= AVX2_VECTOR_SIZE )
 		{
 			size_t remaining = len;
-			while ( remaining >= 32 )
+			while ( remaining >= AVX2_VECTOR_SIZE )
 			{
 				__m256i chunk = _mm256_loadu_si256( reinterpret_cast<const __m256i*>( src ) );
 				_mm256_storeu_si256( reinterpret_cast<__m256i*>( dest ), chunk );
-				src += 32;
-				dest += 32;
-				remaining -= 32;
+				src += AVX2_VECTOR_SIZE;
+				dest += AVX2_VECTOR_SIZE;
+				remaining -= AVX2_VECTOR_SIZE;
 			}
 			if ( remaining > 0 )
 			{
@@ -312,12 +283,12 @@ namespace nfx::string
 		}
 #elif defined( __SSE2__ ) || ( defined( _MSC_VER ) && ( defined( _M_X64 ) || defined( _M_IX86 ) ) )
 		// SSE2 path for systems without AVX2
-		else if ( len >= 64 )
+		else if ( len >= SSE2_UNROLL_SIZE )
 		{
 			size_t remaining = len;
 
 			// Unrolled SSE2 loop for larger copies
-			while ( remaining >= 64 )
+			while ( remaining >= SSE2_UNROLL_SIZE )
 			{
 				__m128i chunk0 = _mm_loadu_si128( reinterpret_cast<const __m128i*>( src + 0 ) );
 				__m128i chunk1 = _mm_loadu_si128( reinterpret_cast<const __m128i*>( src + 16 ) );
@@ -329,19 +300,19 @@ namespace nfx::string
 				_mm_storeu_si128( reinterpret_cast<__m128i*>( dest + 32 ), chunk2 );
 				_mm_storeu_si128( reinterpret_cast<__m128i*>( dest + 48 ), chunk3 );
 
-				src += 64;
-				dest += 64;
-				remaining -= 64;
+				src += SSE2_UNROLL_SIZE;
+				dest += SSE2_UNROLL_SIZE;
+				remaining -= SSE2_UNROLL_SIZE;
 			}
 
 			// Handle remaining 16-byte chunks
-			while ( remaining >= 16 )
+			while ( remaining >= SSE2_VECTOR_SIZE )
 			{
 				__m128i chunk = _mm_loadu_si128( reinterpret_cast<const __m128i*>( src ) );
 				_mm_storeu_si128( reinterpret_cast<__m128i*>( dest ), chunk );
-				src += 16;
-				dest += 16;
-				remaining -= 16;
+				src += SSE2_VECTOR_SIZE;
+				dest += SSE2_VECTOR_SIZE;
+				remaining -= SSE2_VECTOR_SIZE;
 			}
 
 			if ( remaining > 0 )
@@ -349,16 +320,16 @@ namespace nfx::string
 				std::memcpy( dest, src, remaining );
 			}
 		}
-		else if ( len >= 16 )
+		else if ( len >= SSE2_VECTOR_SIZE )
 		{
 			size_t remaining = len;
-			while ( remaining >= 16 )
+			while ( remaining >= SSE2_VECTOR_SIZE )
 			{
 				__m128i chunk = _mm_loadu_si128( reinterpret_cast<const __m128i*>( src ) );
 				_mm_storeu_si128( reinterpret_cast<__m128i*>( dest ), chunk );
-				src += 16;
-				dest += 16;
-				remaining -= 16;
+				src += SSE2_VECTOR_SIZE;
+				dest += SSE2_VECTOR_SIZE;
+				remaining -= SSE2_VECTOR_SIZE;
 			}
 			if ( remaining > 0 )
 			{
@@ -372,73 +343,14 @@ namespace nfx::string
 		}
 
 		m_size = newSize;
-	}
-
-	void DynamicStringBuffer::append( const std::string& str )
-	{
-		append( std::string_view{ str } );
-	}
-
-	void DynamicStringBuffer::append( const char* str )
-	{
-		if ( str )
-		{
-			append( std::string_view{ str, std::strlen( str ) } );
-		}
-	}
-
-	void DynamicStringBuffer::append( char c )
-	{
-		if ( m_size + 1 > m_capacity ) [[unlikely]]
-		{
-			ensureCapacity( m_size + 1 );
-		}
-		currentBuffer()[m_size++] = c;
-	}
-
-	//----------------------------------------------
-	// String conversion
-	//----------------------------------------------
-
-	std::string DynamicStringBuffer::toString() const
-	{
-		return std::string( currentBuffer(), m_size );
-	}
-
-	std::string_view DynamicStringBuffer::toStringView() const noexcept
-	{
-		return std::string_view{ currentBuffer(), m_size };
-	}
-
-	//----------------------------------------------
-	// Iterator interface
-	//----------------------------------------------
-
-	DynamicStringBuffer::Iterator DynamicStringBuffer::begin() noexcept
-	{
-		return currentBuffer();
-	}
-
-	DynamicStringBuffer::ConstIterator DynamicStringBuffer::begin() const noexcept
-	{
-		return currentBuffer();
-	}
-
-	DynamicStringBuffer::Iterator DynamicStringBuffer::end() noexcept
-	{
-		return currentBuffer() + m_size;
-	}
-
-	DynamicStringBuffer::ConstIterator DynamicStringBuffer::end() const noexcept
-	{
-		return currentBuffer() + m_size;
+		return *this;
 	}
 
 	//----------------------------------------------
 	// Private methods
 	//----------------------------------------------
 
-	void DynamicStringBuffer::ensureCapacity( size_t neededCapacity )
+	void StringBuilder::ensureCapacity( size_t neededCapacity )
 	{
 		if ( neededCapacity <= m_capacity )
 		{
@@ -446,13 +358,13 @@ namespace nfx::string
 		}
 
 		size_t newCapacity;
-		if ( m_capacity < 8192 )
+		if ( m_capacity < GROWTH_THRESHOLD )
 		{
-			newCapacity = std::max( neededCapacity, static_cast<size_t>( m_capacity * GROWTH_FACTOR ) );
+			newCapacity = std::max( neededCapacity, static_cast<size_t>( m_capacity * AGGRESSIVE_GROWTH_FACTOR ) );
 		}
 		else
 		{
-			newCapacity = std::max( neededCapacity, static_cast<size_t>( m_capacity + m_capacity / GROWTH_FACTOR ) );
+			newCapacity = std::max( neededCapacity, static_cast<size_t>( m_capacity * STANDARD_GROWTH_FACTOR ) );
 		}
 
 		if ( !m_onHeap && newCapacity <= STACK_BUFFER_SIZE )
@@ -482,101 +394,5 @@ namespace nfx::string
 			m_heapBuffer = std::move( newBuffer );
 			m_capacity = newCapacity;
 		}
-	}
-
-	char* DynamicStringBuffer::currentBuffer() noexcept
-	{
-		return m_onHeap ? m_heapBuffer.get() : m_stackBuffer;
-	}
-
-	const char* DynamicStringBuffer::currentBuffer() const noexcept
-	{
-		return m_onHeap ? m_heapBuffer.get() : m_stackBuffer;
-	}
-
-	//=====================================================================
-	// StringBuilderLease class
-	//=====================================================================
-
-	//----------------------------------------------
-	// Destruction
-	//----------------------------------------------
-
-	StringBuilderLease::~StringBuilderLease()
-	{
-		dispose();
-	}
-
-	//----------------------------------------------
-	// Private implementation methods
-	//----------------------------------------------
-
-	void StringBuilderLease::dispose()
-	{
-		if ( m_valid )
-		{
-			dynamicStringBufferPool().returnToPool( m_buffer );
-			m_buffer = nullptr;
-			m_valid = false;
-		}
-	}
-
-	void StringBuilderLease::throwInvalidOperation() const
-	{
-		throw std::runtime_error{ "Tried to access StringBuilder after it was returned to pool" };
-	}
-
-	//=====================================================================
-	// StringBuilderPool class
-	//=====================================================================
-
-	//----------------------------------------------
-	// Static factory methods
-	//----------------------------------------------
-
-	StringBuilderLease StringBuilderPool::lease()
-	{
-		return StringBuilderLease{ dynamicStringBufferPool().get() };
-	}
-
-	StringBuilderLease StringBuilderPool::lease( size_t capacityHint )
-	{
-		return StringBuilderLease{ dynamicStringBufferPool().get( capacityHint ) };
-	}
-
-	//----------------------------
-	// Statistics methods
-	//----------------------------
-
-	StringBuilderPool::PoolStatistics StringBuilderPool::stats() noexcept
-	{
-		const auto& internalStats = dynamicStringBufferPool().stats();
-		return PoolStatistics{
-			.threadLocalHits = internalStats.threadLocalHits.load(),
-			.dynamicStringBufferPoolHits = internalStats.dynamicStringBufferPoolHits.load(),
-			.newAllocations = internalStats.newAllocations.load(),
-			.totalRequests = internalStats.totalRequests.load(),
-			.hitRate = internalStats.hitRate() };
-	}
-
-	void StringBuilderPool::resetStats() noexcept
-	{
-		dynamicStringBufferPool().resetStats();
-	}
-
-	//----------------------------
-	// Lease management
-	//----------------------------
-
-	size_t StringBuilderPool::clear()
-	{
-		dynamicStringBufferPool().resetStats();
-
-		return dynamicStringBufferPool().clear();
-	}
-
-	size_t StringBuilderPool::size() noexcept
-	{
-		return dynamicStringBufferPool().size();
 	}
 } // namespace nfx::string
