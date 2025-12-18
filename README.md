@@ -18,17 +18,6 @@
 
 ## Key Features
 
-### ⚡ Small Buffer Optimization (SBO)
-
-- **256-byte Stack Buffer**: Zero heap allocations for typical strings
-  - Immediate buffer availability with no memory overhead
-  - Perfect for high-frequency string operations
-  - Most application strings fit within SBO threshold
-- **Adaptive Growth Strategy**: Efficient heap allocation when needed
-  - Aggressive growth (2.0×) for buffers <8KB
-  - Conservative growth (1.5×) for buffers ≥8KB
-  - Minimizes reallocation overhead
-
 ### 🛠️ Rich String Building Interface
 
 - **Fluent API**: Method chaining and stream operators (`<<`) for natural concatenation
@@ -78,7 +67,7 @@
 
 ```cmake
 # --- Library build types ---
-option(NFX_STRINGBUILDER_BUILD_STATIC                 "Build static library"               OFF)
+option(NFX_STRINGBUILDER_BUILD_STATIC                 "Build static library"               ON )
 option(NFX_STRINGBUILDER_BUILD_SHARED                 "Build shared library"               OFF)
 
 # --- Build components ---
@@ -220,10 +209,10 @@ int main()
     StringBuilder builder;
 
     // Build strings with fluent interface
-    builder.append("Hello");
-    builder.append(", ");
-    builder.append("World");
-    builder.append("!");
+    builder.append("Hello")
+           .append(", ")
+           .append("World")
+           .append("!");
 
     // Convert to std::string
     std::string result = builder.toString();
@@ -254,16 +243,16 @@ std::string buildReport(const std::vector<std::string>& items)
     // Add items
     for (size_t i = 0; i < items.size(); ++i)
     {
-        builder.append("Item ");
-        builder.append(std::to_string(i + 1));
-        builder.append(": ");
-        builder.append(items[i]);
-        builder.append("\n");
+        builder.append("Item ")
+               .append(std::to_string(i + 1))
+               .append(": ")
+               .append(items[i])
+               .append("\n");
     }
 
     // Add footer
-    builder.append("Total items: ");
-    builder.append(std::to_string(items.size()));
+    builder.append("Total items: ")
+           .append(std::to_string(items.size()));
 
     return builder.toString();
 }
@@ -282,22 +271,22 @@ void demonstrateStringTypes()
 
     // std::string
     std::string stdStr = "from std::string";
-    builder.append(stdStr);
-    builder.append(" | ");
+    builder.append(stdStr)
+           .append(" | ");
 
     // string_view (zero-copy)
     std::string_view sv = "from string_view";
-    builder.append(sv);
-    builder.append(" | ");
+    builder.append(sv)
+           .append(" | ");
 
     // C-string
-    builder.append("from C-string");
-    builder.append(" | ");
+    builder.append("from C-string")
+           .append(" | ");
 
     // Single characters
-    builder.append('A');
-    builder.append('B');
-    builder.append('C');
+    builder.append('A')
+           .append('B')
+           .append('C');
 
     std::string result = builder.toString();
     // Output: "from std::string | from string_view | from C-string | ABC"
@@ -321,31 +310,56 @@ void demonstrateNumericTypes()
     int64_t i64 = -9223372036854775807LL;
     uint64_t u64 = 18446744073709551615ULL;
 
-    builder.append("int32_t: ");
-    builder.append(std::to_string(i32));
-    builder.append(", ");
-    builder.append("uint32_t: ");
-    builder.append(std::to_string(u32));
-    builder.append(", ");
-    builder.append("int64_t: ");
-    builder.append(std::to_string(i64));
-    builder.append(", ");
-    builder.append("uint64_t: ");
-    builder.append(std::to_string(u64));
+    builder.append("int32_t: ")
+           .append(i32)  // Direct numeric append
+           .append(", uint32_t: ")
+           .append(u32)
+           .append(", int64_t: ")
+           .append(i64)
+           .append(", uint64_t: ")
+           .append(u64);
 
     // Floating-point types
     float f = 3.14159f;
     double d = 2.718281828459045;
 
-    builder.append("\nfloat: ");
-    builder.append(std::to_string(f));
-    builder.append(", ");
-    builder.append("double: ");
-    builder.append(std::to_string(d));
+    builder.append("\nfloat: ")
+           .append(f)  // Direct numeric append
+           .append(", double: ")
+           .append(d);
 
     std::string result = builder.toString();
     // Output: "int32_t: -42, uint32_t: 42, int64_t: -9223372036854775807, uint64_t: 18446744073709551615
     //          float: 3.14159, double: 2.71828"
+}
+
+void demonstrateStreamOperators()
+{
+    StringBuilder builder;
+
+    // Stream operators work with all numeric types
+    int value = 42;
+    double price = 19.99;
+
+    builder << "Product #" << value << " costs $" << price;
+
+    std::string result = builder.toString();
+    // Output: "Product #42 costs $19.99"
+}
+
+void demonstrateVariadicAppend()
+{
+    StringBuilder builder;
+
+    // Append multiple arguments at once
+    int userId = 12345;
+    const char* userName = "alice";
+    int64_t timestamp = 1672531200;
+
+    builder.append("User ", userId, " (", userName, ") logged in at ", timestamp);
+
+    std::string result = builder.toString();
+    // Output: "User 12345 (alice) logged in at 1672531200"
 }
 ```
 
@@ -360,24 +374,39 @@ void demonstrateFormatMethod()
 {
     StringBuilder builder;
 
-    // Using std::format with append
+    // Using StringBuilder's format() method directly
     builder.append("User: ");
-    builder.append(std::format("{} (ID: {:08})", "Alice", 123));
+    builder.format("{} (ID: {:08})", "Alice", 123);
     builder.append("\n");
 
     // Format with floating-point precision
     builder.append("Price: ");
-    builder.append(std::format("${:.2f}", 19.99));
+    builder.format("${:.2f}", 19.99);
     builder.append("\n");
 
     // Format with hex and binary
     builder.append("Value: ");
-    builder.append(std::format("hex=0x{:X}, bin=0b{:b}", 255, 15));
+    builder.format("hex=0x{:X}, bin=0b{:b}", 255, 15);
 
     std::string result = builder.toString();
     // Output: "User: Alice (ID: 00000123)
     //          Price: $19.99
     //          Value: hex=0xFF, bin=0b1111"
+}
+
+void demonstrateFormatChaining()
+{
+    StringBuilder builder;
+
+    // format() returns reference for chaining
+    builder.format("Name: {}", "Bob")
+           .append(" | ")
+           .format("Age: {}", 30)
+           .append(" | ")
+           .format("Score: {:.1f}", 95.7);
+
+    std::string result = builder.toString();
+    // Output: "Name: Bob | Age: 30 | Score: 95.7"
 }
 ```
 
@@ -393,8 +422,8 @@ void demonstrateStdFormatter()
 {
     StringBuilder builder;
 
-    builder.append("Hello, ");
-    builder.append("World!");
+    builder.append("Hello, ")
+           .append("World!");
 
     std::string formatted = std::format("Result: {}", builder);
 
@@ -438,11 +467,11 @@ void directBufferAccess()
 {
     StringBuilder builder;
 
-    // Append methods
-    builder.append("Direct ");
-    builder.append("buffer ");
-    builder.append("access");
-    builder.append('!');
+    // Append methods with chaining
+    builder.append("Direct ")
+           .append("buffer ")
+           .append("access")
+           .append('!');
 
     // Get size and capacity
     size_t size = builder.size();         // Current content size
@@ -505,47 +534,6 @@ void demonstrateMultithreading()
     }
 
     std::cout << "All threads completed successfully\n";
-}
-```
-
-### Complete Example
-
-```cpp
-#include <nfx/string/StringBuilder.h>
-#include <iostream>
-
-int main()
-{
-    using namespace nfx::string;
-
-    // Example: Building a formatted log message
-    {
-        StringBuilder builder;
-
-        // Build structured log entry with fluent chaining
-        builder.append("[INFO] ")
-               .append("User logged in: ")
-               .append("username=john.doe, ")
-               .append("ip=192.168.1.100, ")
-               .append("timestamp=2025-10-31");
-
-        std::string logMessage = builder.toString();
-        std::cout << logMessage << std::endl;
-    }
-
-    // Build another message
-    {
-        StringBuilder builder;
-
-        builder.append("[ERROR] ")
-               .append("Connection failed: ")
-               .append("timeout after 30s");
-
-        std::string errorMessage = builder.toString();
-        std::cout << errorMessage << std::endl;
-    }
-
-    return 0;
 }
 ```
 
@@ -649,4 +637,4 @@ All dependencies are automatically fetched via CMake FetchContent when building 
 
 ---
 
-_Updated on December 17, 2025_
+_Updated on December 18, 2025_

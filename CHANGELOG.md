@@ -8,18 +8,7 @@
 
 ### Changed
 
-- **BREAKING**: Refactored architecture with clear separation of concerns:
-  - `StringBuilder` - Core string building with Small Buffer Optimization (SBO)
-  - `StringBuilderPool` - Three-tier pooling system (thread-local, shared, dynamic allocation)
-  - `StringBuilderLease` - RAII-based resource management for pooled buffers
-- Optimized numeric `append()` methods with direct buffer writing strategy
-- Optimized `StringBuilder::append(std::string_view)` with progressive SIMD strategy
-  - Added fast path for small strings (≤16 bytes) marked as `[[likely]]` using direct `memcpy`
-  - Implemented unrolled SIMD loops for large copies: 128-byte AVX2 loop (4× 32-byte vectors), 64-byte SSE2 loop (4× 16-byte vectors)
-  - Progressive thresholds optimize for different string sizes
-- Adjusted growth strategy in `ensureCapacity()`
-  - Changed growth threshold from 4KB to 8KB
-  - Growth factor: 2.0× below 8KB (fast scaling), 1.5× above 8KB
+- NIL
 
 ### Deprecated
 
@@ -27,8 +16,7 @@
 
 ### Removed
 
-- `DynamicStringBufferPool` class (replaced by `StringBuilderPool`)
-- `src/DynamicStringBufferPool.cpp` and `src/DynamicStringBufferPool.h` (functionality migrated to new architecture)
+- NIL
 
 ### Fixed
 
@@ -37,6 +25,18 @@
 ### Security
 
 - NIL
+
+## [0.4.0] - 2025-12-18
+
+### Changed
+
+- **BREAKING**: Simplified architecture - removed pooling system in favor of direct `StringBuilder` instantiation
+
+### Removed
+
+- **BREAKING**: `StringBuilderPool` static factory class and three-tier pooling system (thread-local, shared, dynamic)
+- **BREAKING**: `StringBuilderLease` RAII wrapper for pooled buffer management
+- `DynamicStringBufferPool` internal class
 
 ## [0.3.0] - 2025-12-07
 
