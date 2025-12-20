@@ -4,7 +4,7 @@
 
 ### Added
 
-- NIL
+- Prepend operations - `StringBuilder::prepend()` methods for inserting content at the beginning of the buffer
 
 ### Changed
 

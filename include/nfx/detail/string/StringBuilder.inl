@@ -248,6 +248,155 @@ namespace nfx::string
 	}
 
 	//----------------------------------------------
+	// Prepend operations
+	//----------------------------------------------
+
+	inline StringBuilder& StringBuilder::prepend( const std::string& str )
+	{
+		prepend( std::string_view{ str } );
+		return *this;
+	}
+
+	inline StringBuilder& StringBuilder::prepend( const char* str )
+	{
+		if ( str )
+		{
+			prepend( std::string_view{ str, strlen( str ) } );
+		}
+		return *this;
+	}
+
+	inline StringBuilder& StringBuilder::prepend( char c )
+	{
+		if ( m_size + 1 > m_capacity ) [[unlikely]]
+		{
+			ensureCapacity( m_size + 1 );
+		}
+
+		char* buf = currentBuffer();
+
+		// Shift existing content right by 1
+		if ( m_size > 0 )
+		{
+			std::memmove( buf + 1, buf, m_size );
+		}
+
+		buf[0] = c;
+		++m_size;
+		return *this;
+	}
+
+	inline StringBuilder& StringBuilder::prepend( std::int8_t value )
+	{
+		char buffer[INT8_MAX_DIGITS];
+		auto [ptr, ec] = std::to_chars( buffer, buffer + INT8_MAX_DIGITS, static_cast<int>( value ) );
+		if ( ec == std::errc() ) [[likely]]
+		{
+			return prepend( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
+		}
+		return *this;
+	}
+
+	inline StringBuilder& StringBuilder::prepend( std::uint8_t value )
+	{
+		char buffer[UINT8_MAX_DIGITS];
+		auto [ptr, ec] = std::to_chars( buffer, buffer + UINT8_MAX_DIGITS, static_cast<unsigned>( value ) );
+		if ( ec == std::errc() ) [[likely]]
+		{
+			return prepend( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
+		}
+		return *this;
+	}
+
+	inline StringBuilder& StringBuilder::prepend( std::int16_t value )
+	{
+		char buffer[INT16_MAX_DIGITS];
+		auto [ptr, ec] = std::to_chars( buffer, buffer + INT16_MAX_DIGITS, value );
+		if ( ec == std::errc() ) [[likely]]
+		{
+			return prepend( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
+		}
+		return *this;
+	}
+
+	inline StringBuilder& StringBuilder::prepend( std::uint16_t value )
+	{
+		char buffer[UINT16_MAX_DIGITS];
+		auto [ptr, ec] = std::to_chars( buffer, buffer + UINT16_MAX_DIGITS, value );
+		if ( ec == std::errc() ) [[likely]]
+		{
+			return prepend( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
+		}
+		return *this;
+	}
+
+	inline StringBuilder& StringBuilder::prepend( std::int32_t value )
+	{
+		char buffer[INT32_MAX_DIGITS];
+		auto [ptr, ec] = std::to_chars( buffer, buffer + INT32_MAX_DIGITS, value );
+		if ( ec == std::errc() ) [[likely]]
+		{
+			return prepend( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
+		}
+		return *this;
+	}
+
+	inline StringBuilder& StringBuilder::prepend( std::uint32_t value )
+	{
+		char buffer[UINT32_MAX_DIGITS];
+		auto [ptr, ec] = std::to_chars( buffer, buffer + UINT32_MAX_DIGITS, value );
+		if ( ec == std::errc() ) [[likely]]
+		{
+			return prepend( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
+		}
+		return *this;
+	}
+
+	inline StringBuilder& StringBuilder::prepend( std::int64_t value )
+	{
+		char buffer[INT64_MAX_DIGITS];
+		auto [ptr, ec] = std::to_chars( buffer, buffer + INT64_MAX_DIGITS, value );
+		if ( ec == std::errc() ) [[likely]]
+		{
+			return prepend( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
+		}
+		return *this;
+	}
+
+	inline StringBuilder& StringBuilder::prepend( std::uint64_t value )
+	{
+		char buffer[UINT64_MAX_DIGITS];
+		auto [ptr, ec] = std::to_chars( buffer, buffer + UINT64_MAX_DIGITS, value );
+		if ( ec == std::errc() ) [[likely]]
+		{
+			return prepend( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
+		}
+		return *this;
+	}
+
+	inline StringBuilder& StringBuilder::prepend( float value )
+	{
+		char buffer[FLOAT_MAX_CHARS];
+		auto [ptr, ec] = std::to_chars( buffer, buffer + FLOAT_MAX_CHARS, value );
+		if ( ec == std::errc() ) [[likely]]
+		{
+			return prepend( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
+		}
+		return *this;
+	}
+
+	inline StringBuilder& StringBuilder::prepend( double value )
+	{
+		char buffer[DOUBLE_MAX_CHARS];
+		auto [ptr, ec] = std::to_chars( buffer, buffer + DOUBLE_MAX_CHARS, value );
+		if ( ec == std::errc() ) [[likely]]
+		{
+			return prepend( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
+		}
+		return *this;
+	}
+
+	//----------------------------------------------
 	// Batch operations
 	//----------------------------------------------
 

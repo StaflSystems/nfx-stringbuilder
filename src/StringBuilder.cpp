@@ -347,6 +347,40 @@ namespace nfx::string
 	}
 
 	//----------------------------------------------
+	// Prepend operations
+	//----------------------------------------------
+
+	StringBuilder& StringBuilder::prepend( std::string_view str )
+	{
+		if ( str.empty() ) [[unlikely]]
+		{
+			return *this;
+		}
+
+		const size_t len = str.size();
+		const size_t newSize = m_size + len;
+
+		if ( newSize > m_capacity ) [[unlikely]]
+		{
+			ensureCapacity( newSize );
+		}
+
+		char* buf = currentBuffer();
+
+		// Shift existing content to the right using memmove (handles overlap)
+		if ( m_size > 0 )
+		{
+			std::memmove( buf + len, buf, m_size );
+		}
+
+		// Copy new content to the beginning
+		std::memcpy( buf, str.data(), len );
+
+		m_size = newSize;
+		return *this;
+	}
+
+	//----------------------------------------------
 	// Private methods
 	//----------------------------------------------
 

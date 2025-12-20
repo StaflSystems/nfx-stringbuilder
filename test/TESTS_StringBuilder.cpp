@@ -235,7 +235,7 @@ namespace nfx::string::test
 	}
 
 	//----------------------------------------------
-	// Content manipulation
+	// Append operations
 	//----------------------------------------------
 
 	TEST( StringBuilder, AppendStringView )
@@ -438,6 +438,204 @@ namespace nfx::string::test
 		StringBuilder builder;
 		builder.append( "Value: ", 42, ", Name: ", "Test" );
 		EXPECT_EQ( builder.toString(), "Value: 42, Name: Test" );
+	}
+
+	//----------------------------------------------
+	// Prepend operations
+	//----------------------------------------------
+
+	TEST( StringBuilder, PrependStringView )
+	{
+		StringBuilder builder;
+		builder.append( "World" );
+		std::string_view sv = "Hello ";
+		builder.prepend( sv );
+		EXPECT_EQ( builder.toString(), "Hello World" );
+	}
+
+	TEST( StringBuilder, PrependStdString )
+	{
+		StringBuilder builder;
+		builder.append( "End" );
+		std::string str = "Start ";
+		builder.prepend( str );
+		EXPECT_EQ( builder.toString(), "Start End" );
+	}
+
+	TEST( StringBuilder, PrependCString )
+	{
+		StringBuilder builder;
+		builder.append( "Suffix" );
+		builder.prepend( "Prefix " );
+		EXPECT_EQ( builder.toString(), "Prefix Suffix" );
+	}
+
+	TEST( StringBuilder, PrependNullCString )
+	{
+		StringBuilder builder;
+		builder.append( "Content" );
+		builder.prepend( static_cast<const char*>( nullptr ) );
+		EXPECT_EQ( builder.toString(), "Content" );
+	}
+
+	TEST( StringBuilder, PrependChar )
+	{
+		StringBuilder builder;
+		builder.append( "BC" );
+		builder.prepend( 'A' );
+		EXPECT_EQ( builder.toString(), "ABC" );
+	}
+
+	TEST( StringBuilder, PrependChaining )
+	{
+		StringBuilder builder;
+		builder.append( "!" );
+		builder.prepend( "World" ).prepend( " " ).prepend( "Hello" );
+		EXPECT_EQ( builder.toString(), "Hello World!" );
+	}
+
+	TEST( StringBuilder, PrependInt8 )
+	{
+		StringBuilder builder;
+		builder.append( " value" );
+		builder.prepend( static_cast<std::int8_t>( -42 ) );
+		EXPECT_EQ( builder.toString(), "-42 value" );
+	}
+
+	TEST( StringBuilder, PrependUInt8 )
+	{
+		StringBuilder builder;
+		builder.append( " items" );
+		builder.prepend( static_cast<std::uint8_t>( 255 ) );
+		EXPECT_EQ( builder.toString(), "255 items" );
+	}
+
+	TEST( StringBuilder, PrependInt16 )
+	{
+		StringBuilder builder;
+		builder.append( " degrees" );
+		builder.prepend( static_cast<std::int16_t>( -1000 ) );
+		EXPECT_EQ( builder.toString(), "-1000 degrees" );
+	}
+
+	TEST( StringBuilder, PrependUInt16 )
+	{
+		StringBuilder builder;
+		builder.append( " ports" );
+		builder.prepend( static_cast<std::uint16_t>( 8080 ) );
+		EXPECT_EQ( builder.toString(), "8080 ports" );
+	}
+
+	TEST( StringBuilder, PrependInt32 )
+	{
+		StringBuilder builder;
+		builder.append( " units" );
+		builder.prepend( static_cast<std::int32_t>( -123456 ) );
+		EXPECT_EQ( builder.toString(), "-123456 units" );
+	}
+
+	TEST( StringBuilder, PrependUInt32 )
+	{
+		StringBuilder builder;
+		builder.append( " bytes" );
+		builder.prepend( static_cast<std::uint32_t>( 987654321 ) );
+		EXPECT_EQ( builder.toString(), "987654321 bytes" );
+	}
+
+	TEST( StringBuilder, PrependInt64 )
+	{
+		StringBuilder builder;
+		builder.append( " milliseconds" );
+		builder.prepend( static_cast<std::int64_t>( -9876543210LL ) );
+		EXPECT_EQ( builder.toString(), "-9876543210 milliseconds" );
+	}
+
+	TEST( StringBuilder, PrependUInt64 )
+	{
+		StringBuilder builder;
+		builder.append( " records" );
+		builder.prepend( static_cast<std::uint64_t>( 9876543210ULL ) );
+		EXPECT_EQ( builder.toString(), "9876543210 records" );
+	}
+
+	TEST( StringBuilder, PrependFloat )
+	{
+		StringBuilder builder;
+		builder.append( " meters" );
+		builder.prepend( 3.14f );
+		std::string result = builder.toString();
+		EXPECT_NE( result.find( "3.14" ), std::string::npos );
+		EXPECT_NE( result.find( "meters" ), std::string::npos );
+	}
+
+	TEST( StringBuilder, PrependDouble )
+	{
+		StringBuilder builder;
+		builder.append( " seconds" );
+		builder.prepend( 2.718281828 );
+		std::string result = builder.toString();
+		EXPECT_NE( result.find( "2.718" ), std::string::npos );
+		EXPECT_NE( result.find( "seconds" ), std::string::npos );
+	}
+
+	TEST( StringBuilder, PrependMixedNumericTypes )
+	{
+		StringBuilder builder;
+		builder.append( " end" );
+		builder.prepend( 3.14f ).prepend( ", float: " ).prepend( static_cast<std::uint64_t>( 123456789 ) ).prepend( ", uint64: " ).prepend( static_cast<std::int32_t>( 42 ) ).prepend( "int32: " );
+
+		std::string result = builder.toString();
+		EXPECT_NE( result.find( "int32: 42" ), std::string::npos );
+		EXPECT_NE( result.find( "uint64: 123456789" ), std::string::npos );
+		EXPECT_NE( result.find( "float: 3.14" ), std::string::npos );
+		EXPECT_NE( result.find( "end" ), std::string::npos );
+	}
+
+	TEST( StringBuilder, PrependToEmptyBuilder )
+	{
+		StringBuilder builder;
+		builder.prepend( "First" );
+		EXPECT_EQ( builder.toString(), "First" );
+	}
+
+	TEST( StringBuilder, PrependAndAppendMixed )
+	{
+		StringBuilder builder;
+		builder.append( "Middle" );
+		builder.prepend( "Start " );
+		builder.append( " End" );
+		EXPECT_EQ( builder.toString(), "Start Middle End" );
+	}
+
+	TEST( StringBuilder, PrependLargeString )
+	{
+		StringBuilder builder;
+		builder.append( "Suffix" );
+		std::string largePrefix( 1000, 'X' );
+		builder.prepend( largePrefix );
+		EXPECT_EQ( builder.size(), 1006 ); // 1000 + 6
+		EXPECT_EQ( builder.toString().substr( 0, 1000 ), largePrefix );
+		EXPECT_EQ( builder.toString().substr( 1000 ), "Suffix" );
+	}
+
+	TEST( StringBuilder, PrependMultipleTimes )
+	{
+		StringBuilder builder;
+		for ( int i = 5; i > 0; --i )
+		{
+			builder.prepend( std::to_string( i ) ).prepend( " " );
+		}
+		std::string result = builder.toString();
+		EXPECT_EQ( result, " 1 2 3 4 5" );
+	}
+
+	TEST( StringBuilder, PrependAfterClear )
+	{
+		StringBuilder builder;
+		builder.append( "Old" );
+		builder.clear();
+		builder.prepend( "New" );
+		EXPECT_EQ( builder.toString(), "New" );
 	}
 
 	//----------------------------------------------

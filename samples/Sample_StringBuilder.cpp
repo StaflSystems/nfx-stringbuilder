@@ -637,5 +637,131 @@ int main()
 		std::cout << "\n";
 	}
 
+	//=====================================================================
+	// 15. Prepend operations - Building strings in reverse
+	//=====================================================================
+	{
+		std::cout << "15. Prepend operations - Building strings in reverse\n";
+		std::cout << "----------------------------------------------------\n";
+
+		// Basic prepend
+		std::cout << "Basic prepend:\n";
+		{
+			StringBuilder builder;
+			builder.append( "World" );
+			builder.prepend( "Hello " );
+			std::cout << "  Result: " << builder.toString() << "\n";
+			std::cout << "  Note: prepend() shifts existing content and inserts at beginning\n";
+			std::cout << "\n";
+		}
+
+		// Prepend chaining
+		std::cout << "Prepend chaining:\n";
+		{
+			StringBuilder builder;
+			builder.append( "!" );
+			builder.prepend( "World" ).prepend( " " ).prepend( "Hello" );
+			std::cout << "  Result: " << builder.toString() << "\n";
+			std::cout << "  Note: Chained prepends execute left-to-right\n";
+			std::cout << "\n";
+		}
+
+		// Mixing append and prepend
+		std::cout << "Mixing append and prepend:\n";
+		{
+			StringBuilder builder;
+			builder.append( "Middle" );
+			builder.prepend( "Start " );
+			builder.append( " End" );
+			std::cout << "  Result: " << builder.toString() << "\n";
+			std::cout << "  Note: Useful for wrapping existing content\n";
+			std::cout << "\n";
+		}
+
+		// Prepend with numeric types
+		std::cout << "Prepend with numeric types:\n";
+		{
+			StringBuilder builder;
+			builder.append( " items" );
+			builder.prepend( 42 );
+			std::cout << "  Result: " << builder.toString() << "\n";
+
+			builder.clear();
+			builder.append( " seconds" );
+			builder.prepend( 3.14 );
+			std::cout << "  Result: " << builder.toString() << "\n";
+			std::cout << "\n";
+		}
+
+		// Building stack-like structures
+		std::cout << "Building stack-like structures (LIFO):\n";
+		{
+			StringBuilder builder;
+			for ( int i = 1; i <= 5; ++i )
+			{
+				builder.prepend( std::to_string( i ) ).prepend( " " );
+			}
+			std::cout << "  Result: " << builder.toString() << "\n";
+			std::cout << "  Note: Each prepend pushes previous content right\n";
+			std::cout << "\n";
+		}
+
+		// Log prefix injection
+		std::cout << "Log prefix injection:\n";
+		{
+			StringBuilder builder;
+			builder.append( "User logged in successfully" );
+
+			// Add timestamp prefix
+			builder.prepend( " " );
+			builder.prepend( "10:30:45" );
+
+			// Add log level
+			builder.prepend( " " );
+			builder.prepend( "[INFO]" );
+
+			std::cout << "  Result: " << builder.toString() << "\n";
+			std::cout << "  Note: Build message first, then add metadata\n";
+			std::cout << "\n";
+		}
+
+		// Performance consideration
+		std::cout << "Performance consideration:\n";
+		{
+			std::cout << "  prepend() uses memmove() to shift existing content\n";
+			std::cout << "  Time complexity: O(n) where n is current buffer size\n";
+			std::cout << "  Best practice: Build in append order when possible\n";
+			std::cout << "  Use prepend() when logic requires reverse construction\n";
+			std::cout << "\n";
+		}
+
+		// Wrapping content
+		std::cout << "Wrapping content with quotes:\n";
+		{
+			StringBuilder builder;
+			std::string username = "Alice";
+			builder.append( username );
+			builder.prepend( "\"" );
+			builder.append( "\"" );
+			std::cout << "  Result: " << builder.toString() << "\n";
+			std::cout << "\n";
+		}
+
+		// Building paths in reverse
+		std::cout << "Building paths in reverse:\n";
+		{
+			StringBuilder builder;
+			builder.append( "file.txt" );
+			builder.prepend( "/" );
+			builder.prepend( "documents" );
+			builder.prepend( "/" );
+			builder.prepend( "home" );
+			builder.prepend( "/" );
+			std::cout << "  Result: " << builder.toString() << "\n";
+			std::cout << "  Note: Useful when traversing directory tree upward\n";
+			std::cout << "\n";
+		}
+	}
+
 	return 0;
 }

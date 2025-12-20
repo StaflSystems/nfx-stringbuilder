@@ -236,7 +236,7 @@ namespace nfx::string
 		void resize( size_t newSize );
 
 		//----------------------------------------------
-		// Content manipulation
+		// Append operations
 		//----------------------------------------------
 
 		/**
@@ -336,6 +336,110 @@ namespace nfx::string
 		 * @return Reference to this StringBuilder for chaining
 		 */
 		inline StringBuilder& append( double value );
+
+		//----------------------------------------------
+		// Prepend operations
+		//----------------------------------------------
+
+		/**
+		 * @brief Prepends string_view contents to the buffer
+		 * @param str String view to prepend
+		 * @return Reference to this StringBuilder for chaining
+		 * @details Shifts existing content and inserts at the beginning.
+		 *          Performance: O(n) due to memory shift operation.
+		 */
+		StringBuilder& prepend( std::string_view str );
+
+		/**
+		 * @brief Prepends std::string contents to the buffer
+		 * @param str String to prepend
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& prepend( const std::string& str );
+
+		/**
+		 * @brief Prepends null-terminated C-string to the buffer
+		 * @param str Null-terminated C-string to prepend (null pointer handled gracefully)
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& prepend( const char* str );
+
+		/**
+		 * @brief Prepends single character to the buffer
+		 * @param c Character to prepend
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& prepend( char c );
+
+		/**
+		 * @brief Prepends 8-bit signed integer to the buffer
+		 * @param value Integer value to prepend
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& prepend( std::int8_t value );
+
+		/**
+		 * @brief Prepends 8-bit unsigned integer to the buffer
+		 * @param value Integer value to prepend
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& prepend( std::uint8_t value );
+
+		/**
+		 * @brief Prepends 16-bit signed integer to the buffer
+		 * @param value Integer value to prepend
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& prepend( std::int16_t value );
+
+		/**
+		 * @brief Prepends 16-bit unsigned integer to the buffer
+		 * @param value Integer value to prepend
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& prepend( std::uint16_t value );
+
+		/**
+		 * @brief Prepends 32-bit signed integer to the buffer
+		 * @param value Integer value to prepend
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& prepend( std::int32_t value );
+
+		/**
+		 * @brief Prepends 32-bit unsigned integer to the buffer
+		 * @param value Integer value to prepend
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& prepend( std::uint32_t value );
+
+		/**
+		 * @brief Prepends 64-bit signed integer to the buffer
+		 * @param value Integer value to prepend
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& prepend( std::int64_t value );
+
+		/**
+		 * @brief Prepends 64-bit unsigned integer to the buffer
+		 * @param value Integer value to prepend
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& prepend( std::uint64_t value );
+
+		/**
+		 * @brief Prepends single-precision floating-point to the buffer
+		 * @param value Floating-point value to prepend
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& prepend( float value );
+
+		/**
+		 * @brief Prepends double-precision floating-point to the buffer
+		 * @param value Floating-point value to prepend
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		inline StringBuilder& prepend( double value );
 
 		//----------------------------------------------
 		// Batch operations
