@@ -4,7 +4,7 @@
 
 ### Added
 
-- Prepend operations - `StringBuilder::prepend()` methods for inserting content at the beginning of the buffer
+- NIL
 
 ### Changed
 
@@ -25,6 +25,12 @@
 ### Security
 
 - NIL
+
+## [0.4.1] - 2025-12-20
+
+### Added
+
+- Prepend operations - `StringBuilder::prepend()` methods for inserting content at the beginning of the buffer
 
 ## [0.4.0] - 2025-12-18
 
