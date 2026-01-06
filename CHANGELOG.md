@@ -8,7 +8,10 @@
 
 ### Changed
 
-- NIL
+- Numeric append methods write directly to buffer with `std::to_chars`
+- Direct `m_buffer` pointer access eliminates helper method overhead
+- Move-optimized `toString() &&` overload for rvalue instances
+- Stack buffer aligned to 32 bytes for better compiler auto-vectorization
 
 ### Deprecated
 

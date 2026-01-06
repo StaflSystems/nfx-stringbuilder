@@ -127,22 +127,6 @@ target_link_libraries(your_target PRIVATE nfx-stringbuilder::static)
 
 ### Building
 
-> ⚠️ **Important**: The library can use SIMD instructions (AVX2/SSE2) for optimized string copy operations. **Compiler flags are required** to enable these optimizations. Without proper flags, the library uses standard `memcpy` implementations.
-
-**Compiler Flags for SIMD:**
-
-- **GCC/Clang**: `-march=native` (auto-detect) or specific flags like `-msse2`, `-mavx`, `-mavx2`
-- **MSVC**: `/arch:AVX` or `/arch:AVX2`
-
-**CMake Example:**
-
-```cmake
-target_compile_options(your_target PRIVATE
-    $<$<CXX_COMPILER_ID:MSVC>:/arch:AVX2>
-    $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:-march=native>
-)
-```
-
 **Build Commands:**
 
 ```bash
@@ -637,4 +621,4 @@ All dependencies are automatically fetched via CMake FetchContent when building 
 
 ---
 
-_Updated on December 18, 2025_
+_Updated on January 06, 2026_

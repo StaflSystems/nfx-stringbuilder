@@ -32,23 +32,23 @@
  * ```
  * Memory Layout:
  * ┌──────────────────────────────────────────────────────┐
- * │              StringBuilder Buffer                    │
+ * │                 StringBuilder Buffer                 │
  * ├──────────────────────────────────────────────────────┤
- * │  Size ≤ 256 bytes:                                   │
- * │  ┌─────────────────────────────────────┐             │
- * │  │   Stack Buffer (SBO)                │             │
- * │  │   - Zero heap allocations           │             │
- * │  │   - Cache-friendly (256 bytes)      │             │
- * │  │   - Automatic cleanup               │             │
- * │  └─────────────────────────────────────┘             │
+ * │       Size ≤ 256 bytes:                              │
+ * │       ┌─────────────────────────────────────┐        │
+ * │       │   Stack Buffer (SBO)                │        │
+ * │       │   - Zero heap allocations           │        │
+ * │       │   - Cache-friendly (256 bytes)      │        │
+ * │       │   - Automatic cleanup               │        │
+ * │       └─────────────────────────────────────┘        │
  * │                                                      │
- * │  Size > 256 bytes:                                   │
- * │  ┌─────────────────────────────────────┐             │
- * │  │   Heap Buffer (Dynamic)             │             │
- * │  │   - Exponential growth (< 8KB)      │             │
- * │  │   - Conservative growth (≥ 8KB)     │             │
- * │  │   - Managed by unique_ptr           │             │
- * │  └─────────────────────────────────────┘             │
+ * │       Size > 256 bytes:                              │
+ * │       ┌─────────────────────────────────────┐        │
+ * │       │   Heap Buffer (Dynamic)             │        │
+ * │       │   - Exponential growth (< 8KB)      │        │
+ * │       │   - Conservative growth (≥ 8KB)     │        │
+ * │       │   - Managed by unique_ptr           │        │
+ * │       └─────────────────────────────────────┘        │
  * └──────────────────────────────────────────────────────┘
  * ```
  *
@@ -225,7 +225,8 @@ namespace nfx::string
 		 * @details May allocate more than requested for efficiency
 		 * @throws std::bad_alloc if memory allocation fails
 		 */
-		void reserve( size_t newCapacity );
+
+		inline void reserve( size_t newCapacity );
 
 		/**
 		 * @brief Resize buffer to specified size
@@ -233,7 +234,7 @@ namespace nfx::string
 		 * @details May truncate content or extend with undefined bytes
 		 * @throws std::bad_alloc if memory allocation fails
 		 */
-		void resize( size_t newSize );
+		inline void resize( size_t newSize );
 
 		//----------------------------------------------
 		// Append operations
@@ -244,7 +245,7 @@ namespace nfx::string
 		 * @param str String view to append
 		 * @return Reference to this StringBuilder for chaining
 		 */
-		StringBuilder& append( std::string_view str );
+		inline StringBuilder& append( std::string_view str );
 
 		/**
 		 * @brief Appends std::string contents to the buffer
@@ -589,7 +590,16 @@ namespace nfx::string
 		 * @return String copy of buffer content
 		 * @details Creates new string object - consider toStringView() for read-only access
 		 */
-		[[nodiscard]] inline std::string toString() const;
+		[[nodiscard]] inline std::string toString() const&;
+
+		/**
+		 * @brief Convert buffer to string by moving (rvalue-qualified)
+		 * @return std::string with moved heap buffer or copied stack buffer
+		 * @details For heap buffers, transfers ownership without copying.
+		 *          For stack buffers, performs a copy.
+		 *          Resets builder to empty state after move.
+		 */
+		[[nodiscard]] std::string toString() &&;
 
 		/**
 		 * @brief Get string_view of buffer content
@@ -684,11 +694,14 @@ namespace nfx::string
 		static constexpr double AGGRESSIVE_GROWTH_FACTOR = 2.0;
 		static constexpr double STANDARD_GROWTH_FACTOR = 1.5;
 
-		/** @brief Stack-allocated buffer for small strings */
-		alignas( char ) char m_stackBuffer[STACK_BUFFER_SIZE];
+		/** @brief Stack-allocated buffer for small strings (aligned for SIMD) */
+		alignas( 32 ) char m_stackBuffer[STACK_BUFFER_SIZE];
 
 		/** @brief Heap-allocated buffer for large strings */
 		std::unique_ptr<char[]> m_heapBuffer;
+
+		/** @brief Active buffer pointer (points to either m_stackBuffer or m_heapBuffer) */
+		char* m_buffer;
 
 		/** @brief Current size of data in buffer */
 		size_t m_size;
@@ -708,18 +721,6 @@ namespace nfx::string
 		 * @param neededCapacity Minimum required capacity
 		 */
 		void ensureCapacity( size_t neededCapacity );
-
-		/**
-		 * @brief Returns pointer to current buffer (stack or heap)
-		 * @return Pointer to active buffer
-		 */
-		inline char* currentBuffer() noexcept;
-
-		/**
-		 * @brief Returns const pointer to current buffer (stack or heap)
-		 * @return Const pointer to active buffer
-		 */
-		inline const char* currentBuffer() const noexcept;
 	};
 } // namespace nfx::string
 
