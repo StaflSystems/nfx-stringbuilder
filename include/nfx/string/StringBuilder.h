@@ -32,23 +32,23 @@
  * ```
  * Memory Layout:
  * ┌──────────────────────────────────────────────────────┐
- * │                 StringBuilder Buffer                 │
+ * │              StringBuilder Buffer                    │
  * ├──────────────────────────────────────────────────────┤
- * │       Size ≤ 256 bytes:                              │
- * │       ┌─────────────────────────────────────┐        │
- * │       │   Stack Buffer (SBO)                │        │
- * │       │   - Zero heap allocations           │        │
- * │       │   - Cache-friendly (256 bytes)      │        │
- * │       │   - Automatic cleanup               │        │
- * │       └─────────────────────────────────────┘        │
+ * │  Size ≤ 256 bytes:                                   │
+ * │  ┌─────────────────────────────────────┐             │
+ * │  │   Stack Buffer (SBO)                │             │
+ * │  │   - Zero heap allocations           │             │
+ * │  │   - Cache-friendly (256 bytes)      │             │
+ * │  │   - Automatic cleanup               │             │
+ * │  └─────────────────────────────────────┘             │
  * │                                                      │
- * │       Size > 256 bytes:                              │
- * │       ┌─────────────────────────────────────┐        │
- * │       │   Heap Buffer (Dynamic)             │        │
- * │       │   - Exponential growth (< 8KB)      │        │
- * │       │   - Conservative growth (≥ 8KB)     │        │
- * │       │   - Managed by unique_ptr           │        │
- * │       └─────────────────────────────────────┘        │
+ * │  Size > 256 bytes:                                   │
+ * │  ┌─────────────────────────────────────┐             │
+ * │  │   Heap Buffer (Dynamic)             │             │
+ * │  │   - Exponential growth (< 8KB)      │             │
+ * │  │   - Conservative growth (≥ 8KB)     │             │
+ * │  │   - Managed by unique_ptr           │             │
+ * │  └─────────────────────────────────────┘             │
  * └──────────────────────────────────────────────────────┘
  * ```
  *
@@ -75,6 +75,18 @@
 #include <memory>
 #include <string>
 #include <string_view>
+
+/**
+ * @def NFX_STRINGBUILDER_FORCE_INLINE
+ * @brief Cross-platform forced inline macro for critical hot-path methods
+ */
+#if defined( _MSC_VER )
+#	define NFX_STRINGBUILDER_FORCE_INLINE __forceinline
+#elif defined( __GNUC__ ) || defined( __clang__ )
+#	define NFX_STRINGBUILDER_FORCE_INLINE __attribute__( ( always_inline ) ) inline
+#else
+#	define NFX_STRINGBUILDER_FORCE_INLINE inline
+#endif
 
 namespace nfx::string
 {
@@ -260,6 +272,15 @@ namespace nfx::string
 		 * @return Reference to this StringBuilder for chaining
 		 */
 		inline StringBuilder& append( const char* str );
+
+		/**
+		 * @brief Appends string literal with compile-time length (zero strlen overhead)
+		 * @tparam N String literal length (deduced by compiler)
+		 * @param str String literal
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		template <size_t N>
+		NFX_STRINGBUILDER_FORCE_INLINE StringBuilder& append( const char ( &str )[N] );
 
 		/**
 		 * @brief Appends single character to the buffer
@@ -486,6 +507,15 @@ namespace nfx::string
 		 * @return Reference to this StringBuilder for chaining
 		 */
 		inline StringBuilder& operator<<( const char* str );
+
+		/**
+		 * @brief Stream operator for string literal (zero strlen overhead)
+		 * @tparam N String literal length (deduced by compiler)
+		 * @param str String literal
+		 * @return Reference to this StringBuilder for chaining
+		 */
+		template <size_t N>
+		NFX_STRINGBUILDER_FORCE_INLINE StringBuilder& operator<<( const char ( &str )[N] );
 
 		/**
 		 * @brief Stream operator for single character

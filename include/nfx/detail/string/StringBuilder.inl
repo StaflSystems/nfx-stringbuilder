@@ -163,6 +163,19 @@ namespace nfx::string
 		return *this;
 	}
 
+	/**
+	 * @brief Compile-time string literal append (zero strlen overhead)
+	 * @tparam N String literal length (deduced by compiler)
+	 * @param str String literal with compile-time known length
+	 * @return Reference to this StringBuilder for chaining
+	 */
+	template <size_t N>
+	NFX_STRINGBUILDER_FORCE_INLINE StringBuilder& StringBuilder::append( const char ( &str )[N] )
+	{
+		// N includes null terminator, actual length is N-1
+		return append( std::string_view{ str, N - 1 } );
+	}
+
 	inline StringBuilder& StringBuilder::append( char c )
 	{
 		if ( m_size + 1 > m_capacity ) [[unlikely]]
@@ -498,6 +511,18 @@ namespace nfx::string
 	{
 		append( str );
 		return *this;
+	}
+
+	/**
+	 * @brief Stream operator for string literal (zero strlen overhead)
+	 * @tparam N String literal length (deduced by compiler)
+	 * @param str String literal
+	 * @return Reference to this StringBuilder for chaining
+	 */
+	template <size_t N>
+	NFX_STRINGBUILDER_FORCE_INLINE StringBuilder& StringBuilder::operator<<( const char ( &str )[N] )
+	{
+		return append( str );
 	}
 
 	inline StringBuilder& StringBuilder::operator<<( char c )

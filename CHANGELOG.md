@@ -4,7 +4,8 @@
 
 ### Added
 
-- NIL
+- Template overloads for string literals with compile-time length deduction (zero `strlen()` overhead)
+- Cross-platform `NFX_STRINGBUILDER_FORCE_INLINE` macro (MSVC `__forceinline`, GCC/Clang `__attribute__((always_inline))`)
 
 ### Changed
 
