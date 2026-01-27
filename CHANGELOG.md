@@ -4,15 +4,11 @@
 
 ### Added
 
-- Template overloads for string literals with compile-time length deduction (zero `strlen()` overhead)
-- Cross-platform `NFX_STRINGBUILDER_FORCE_INLINE` macro (MSVC `__forceinline`, GCC/Clang `__attribute__((always_inline))`)
+- NIL
 
 ### Changed
 
-- Numeric append methods write directly to buffer with `std::to_chars`
-- Direct `m_buffer` pointer access eliminates helper method overhead
-- Move-optimized `toString() &&` overload for rvalue instances
-- Stack buffer aligned to 32 bytes for better compiler auto-vectorization
+- NIL
 
 ### Deprecated
 
@@ -29,6 +25,20 @@
 ### Security
 
 - NIL
+  
+## [0.5.0] - 2026-01-27
+
+### Added
+
+- Template overloads for string literals with compile-time length deduction (zero `strlen()` overhead)
+- Cross-platform `NFX_STRINGBUILDER_FORCE_INLINE` macro (MSVC `__forceinline`, GCC/Clang `__attribute__((always_inline))`)
+
+### Changed
+
+- Numeric append methods write directly to buffer with `std::to_chars`
+- Direct `m_buffer` pointer access eliminates helper method overhead
+- Move-optimized `toString() &&` overload for rvalue instances
+- Stack buffer aligned to 32 bytes for better compiler auto-vectorization
 
 ## [0.4.1] - 2025-12-20
 
