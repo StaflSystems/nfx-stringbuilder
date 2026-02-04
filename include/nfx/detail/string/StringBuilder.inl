@@ -163,12 +163,6 @@ namespace nfx::string
 		return *this;
 	}
 
-	/**
-	 * @brief Compile-time string literal append (zero strlen overhead)
-	 * @tparam N String literal length (deduced by compiler)
-	 * @param str String literal with compile-time known length
-	 * @return Reference to this StringBuilder for chaining
-	 */
 	template <size_t N>
 	NFX_STRINGBUILDER_FORCE_INLINE StringBuilder& StringBuilder::append( const char ( &str )[N] )
 	{
@@ -513,12 +507,6 @@ namespace nfx::string
 		return *this;
 	}
 
-	/**
-	 * @brief Stream operator for string literal (zero strlen overhead)
-	 * @tparam N String literal length (deduced by compiler)
-	 * @param str String literal
-	 * @return Reference to this StringBuilder for chaining
-	 */
 	template <size_t N>
 	NFX_STRINGBUILDER_FORCE_INLINE StringBuilder& StringBuilder::operator<<( const char ( &str )[N] )
 	{
