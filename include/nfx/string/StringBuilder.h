@@ -519,6 +519,49 @@ namespace nfx::string
         inline StringBuilder& append( T&& first, Args&&... args );
 
         //----------------------------------------------
+        // Join operations
+        //----------------------------------------------
+
+        /**
+         * @brief Join container elements with delimiter
+         * @tparam Container Container type (vector, array, list, etc.) with begin()/end()
+         * @param items Container of items to join
+         * @param delimiter Delimiter to insert between elements
+         * @return Reference to this StringBuilder for chaining
+         * @details Appends all container elements separated by delimiter.
+         *          Works with any container providing iterators and elements convertible to string.
+         *          Uses append() internally, so supports strings, string_view, and types with operator<<.
+         * 
+         * Example:
+         * @code
+         * std::vector<std::string> fields = {"GPGGA", "123519", "4807.038", "N"};
+         * builder.join(fields, ",");  // "GPGGA,123519,4807.038,N"
+         * 
+         * std::vector<int> numbers = {1, 2, 3, 4, 5};
+         * builder.join(numbers, ", ");  // "1, 2, 3, 4, 5"
+         * @endcode
+         */
+        template <typename Container>
+        inline StringBuilder& join( const Container& items, std::string_view delimiter );
+
+        /**
+         * @brief Join container elements with character delimiter
+         * @tparam Container Container type (vector, array, list, etc.) with begin()/end()
+         * @param items Container of items to join
+         * @param delimiter Character delimiter to insert between elements
+         * @return Reference to this StringBuilder for chaining
+         * @details Optimized variant for single-character delimiters (e.g., ',', ';', '|').
+         * 
+         * Example:
+         * @code
+         * std::vector<std::string> fields = {"A", "B", "C"};
+         * builder.join(fields, ',');  // "A,B,C"
+         * @endcode
+         */
+        template <typename Container>
+        inline StringBuilder& join( const Container& items, char delimiter );
+
+        //----------------------------------------------
         // Stream operators
         //----------------------------------------------
 

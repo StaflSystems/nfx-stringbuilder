@@ -623,6 +623,60 @@ namespace nfx::string
     }
 
     //----------------------------------------------
+    // Join operations
+    //----------------------------------------------
+
+    template <typename Container>
+    inline StringBuilder& StringBuilder::join( const Container& items, std::string_view delimiter )
+    {
+        auto it = std::begin( items );
+        auto end = std::end( items );
+
+        if( it == end )
+        {
+            return *this; // Empty container
+        }
+
+        // Append first element
+        append( *it );
+        ++it;
+
+        // Append remaining elements with delimiter
+        for( ; it != end; ++it )
+        {
+            append( delimiter );
+            append( *it );
+        }
+
+        return *this;
+    }
+
+    template <typename Container>
+    inline StringBuilder& StringBuilder::join( const Container& items, char delimiter )
+    {
+        auto it = std::begin( items );
+        auto end = std::end( items );
+
+        if( it == end )
+        {
+            return *this; // Empty container
+        }
+
+        // Append first element
+        append( *it );
+        ++it;
+
+        // Append remaining elements with delimiter
+        for( ; it != end; ++it )
+        {
+            append( delimiter );
+            append( *it );
+        }
+
+        return *this;
+    }
+
+    //----------------------------------------------
     // String conversion
     //----------------------------------------------
 

@@ -5,6 +5,7 @@
 ### Added
 
 - Line-based operations: `appendLine(str)` and `appendLn(str)` - append string with automatic newline character
+- Join operations: `join(container, delimiter)` - join collection elements with delimiter (supports both `string_view` and `char` delimiters)
 
 ### Changed
 

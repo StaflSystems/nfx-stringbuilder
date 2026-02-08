@@ -5,7 +5,6 @@ Project roadmap and task tracking for the nfx-stringbuilder library.
 ### Todo
 
 - [ ] Add convenience methods for common operations
-  - [ ] `join(container, delimiter)` - join collection elements with delimiter
   - [ ] `substr(pos, len)` for zero-copy access to portions
   - [ ] `replace(pos, len, str)` - in-place replacement
   - [ ] `insert(pos, str)` - insert at position
@@ -20,3 +19,4 @@ Project roadmap and task tracking for the nfx-stringbuilder library.
 ### Done ✓
 
 - [x] `appendLine(str)` / `appendLn(str)` - append with newline character (2026-02-08)
+- [x] `join(container, delimiter)` - join collection elements with delimiter (2026-02-08)

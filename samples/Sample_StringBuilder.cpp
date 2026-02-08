@@ -775,10 +775,152 @@ int main()
     }
 
     //=====================================================================
-    // 16. Prepend operations - Building strings in reverse
+    // 16. Join operations - Combining container elements
     //=====================================================================
     {
-        std::cout << "16. Prepend operations - Building strings in reverse\n";
+        std::cout << "16. Join operations - Combining container elements\n";
+        std::cout << "---------------------------------------------------\n";
+
+        // Basic join with string vector
+        std::cout << "Basic join with string delimiter:\n";
+        {
+            StringBuilder builder;
+            std::vector<std::string> words = { "Hello", "World", "from", "StringBuilder" };
+            builder.join( words, " " );
+
+            std::cout << "  Result: " << builder.toString() << "\n";
+            std::cout << "  Note: Joins vector elements with delimiter\n";
+            std::cout << "\n";
+        }
+
+        // Join with character delimiter
+        std::cout << "Join with character delimiter:\n";
+        {
+            StringBuilder builder;
+            std::vector<std::string> fields = { "Alice", "30", "Paris" };
+            builder.join( fields, ',' );
+
+            std::cout << "  Result: " << builder.toString() << "\n";
+            std::cout << "  Note: Single char delimiter (optimized)\n";
+            std::cout << "\n";
+        }
+
+        // Join numeric values
+        std::cout << "Join numeric values:\n";
+        {
+            StringBuilder builder;
+            std::vector<int> numbers = { 1, 2, 3, 4, 5 };
+            builder.join( numbers, ", " );
+
+            std::cout << "  Result: " << builder.toString() << "\n";
+            std::cout << "  Note: Works with any type supporting append()\n";
+            std::cout << "\n";
+        }
+
+        // Building CSV line
+        std::cout << "Building CSV line:\n";
+        {
+            StringBuilder builder;
+            std::vector<std::string> csvFields = { "Name", "Age", "City", "Country" };
+
+            // Header
+            builder.join( csvFields, "," ).appendLine();
+
+            // Data rows
+            std::vector<std::string> row1 = { "Alice", "30", "Paris", "France" };
+            builder.join( row1, "," ).appendLine();
+
+            std::vector<std::string> row2 = { "Bob", "25", "London", "UK" };
+            builder.join( row2, "," ).appendLine();
+
+            std::cout << "  Result:\n" << builder.toString();
+            std::cout << "\n";
+        }
+
+        // Building NMEA sentence fields
+        std::cout << "Building NMEA sentence with join():\n";
+        {
+            StringBuilder builder;
+            std::vector<std::string> gpsFields = { "GPGGA", "123519", "4807.038", "N",    "01131.000", "E", "1", "08",
+                                                   "0.9",   "545.4",  "M",        "46.9", "M",         "",  "" };
+
+            builder.append( "$" );
+            builder.join( gpsFields, "," );
+
+            // Calculate checksum on the sentence (without $)
+            std::string sentence = builder.toString().substr( 1 ); // Skip $
+            std::string checksum = calculateNmeaChecksum( sentence );
+
+            builder.append( "*" ).append( checksum );
+            builder.appendLine();
+
+            std::cout << "  Result: " << builder.toString();
+            std::cout << "  Note: join() simplifies NMEA field assembly\n";
+            std::cout << "\n";
+        }
+
+        // Join with prefix/suffix
+        std::cout << "Join with wrapping:\n";
+        {
+            StringBuilder builder;
+            std::vector<std::string> items = { "apple", "banana", "cherry" };
+
+            builder.append( "Items: [" );
+            builder.join( items, ", " );
+            builder.append( "]" );
+
+            std::cout << "  Result: " << builder.toString() << "\n";
+            std::cout << "\n";
+        }
+
+        // Join with array
+        std::cout << "Join with std::array:\n";
+        {
+            StringBuilder builder;
+            std::array<int, 4> coordinates = { 10, 20, 30, 40 };
+            builder.append( "Coordinates: " );
+            builder.join( coordinates, ", " );
+
+            std::cout << "  Result: " << builder.toString() << "\n";
+            std::cout << "\n";
+        }
+
+        // Empty container
+        std::cout << "Join empty container:\n";
+        {
+            StringBuilder builder;
+            std::vector<std::string> empty;
+            builder.append( "Before" );
+            builder.join( empty, "," );
+            builder.append( "After" );
+
+            std::cout << "  Result: " << builder.toString() << "\n";
+            std::cout << "  Note: Empty join doesn't add anything\n";
+            std::cout << "\n";
+        }
+
+        // Building SQL IN clause
+        std::cout << "Building SQL IN clause:\n";
+        {
+            StringBuilder builder;
+            std::vector<int> userIds = { 101, 102, 103, 104 };
+
+            builder.append( "SELECT * FROM users WHERE id IN (" );
+            builder.join( userIds, ", " );
+            builder.append( ")" );
+
+            std::cout << "  Result: " << builder.toString() << "\n";
+            std::cout << "\n";
+        }
+
+        std::cout << "\n";
+    }
+
+    //=====================================================================
+    // 17. Prepend operations - Building strings in reverse
+    //=====================================================================
+    {
+        std::cout << "17. Prepend operations - Building strings in reverse\n";
         std::cout << "----------------------------------------------------\n";
 
         // Basic prepend
