@@ -4,11 +4,11 @@
 
 ### Added
 
-- NIL
+- Line-based operations: `appendLine(str)` and `appendLn(str)` - append string with automatic newline character
 
 ### Changed
 
-- NIL
+- chore(deps): bump google-benchmark from 1.9.4 to 1.9.5
 
 ### Deprecated
 

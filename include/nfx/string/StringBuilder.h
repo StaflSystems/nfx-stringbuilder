@@ -360,6 +360,41 @@ namespace nfx::string
         inline StringBuilder& append( double value );
 
         //----------------------------------------------
+        // Line operations
+        //----------------------------------------------
+
+        /**
+         * @brief Appends string_view contents followed by a newline character
+         * @param str String view to append (default: empty)
+         * @return Reference to this StringBuilder for chaining
+         * @details Efficiently appends the string and newline in one operation.
+         *          Useful for building line-based formats like logs, CSV, or ISO 19848 messages.
+         *
+         * Example:
+         * @code
+         * builder.appendLine("Header")
+         *        .appendLine("Data1")
+         *        .appendLine("Data2");
+         * // Result: "Header\nData1\nData2\n"
+         * @endcode
+         */
+        inline StringBuilder& appendLine( std::string_view str = "" );
+
+        /**
+         * @brief Appends std::string contents followed by a newline character
+         * @param str String to append
+         * @return Reference to this StringBuilder for chaining
+         */
+        inline StringBuilder& appendLine( const std::string& str );
+
+        /**
+         * @brief Appends null-terminated C-string followed by a newline character
+         * @param str Null-terminated C-string to append (null pointer handled gracefully)
+         * @return Reference to this StringBuilder for chaining
+         */
+        inline StringBuilder& appendLine( const char* str );
+
+        //----------------------------------------------
         // Prepend operations
         //----------------------------------------------
 

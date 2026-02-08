@@ -40,6 +40,27 @@
 #include <vector>
 #include <thread>
 
+//=====================================================================
+// Helper function: Calculate NMEA-0183 checksum
+//=====================================================================
+/**
+ * @brief Calculate NMEA-0183 checksum (XOR of all characters between $ and *)
+ * @param sentence NMEA sentence without $ prefix and * suffix
+ * @return Checksum as 2-digit uppercase hex string
+ */
+std::string calculateNmeaChecksum( std::string_view sentence )
+{
+    uint8_t checksum = 0;
+    for( char c : sentence )
+    {
+        checksum ^= static_cast<uint8_t>( c );
+    }
+
+    char result[3];
+    std::snprintf( result, sizeof( result ), "%02X", checksum );
+    return std::string{ result };
+}
+
 int main()
 {
     using namespace nfx::string;
@@ -619,10 +640,145 @@ int main()
     }
 
     //=====================================================================
-    // 15. Prepend operations - Building strings in reverse
+    // 15. Line-based operations - appendLine() / appendLn()
     //=====================================================================
     {
-        std::cout << "15. Prepend operations - Building strings in reverse\n";
+        std::cout << "15. Line-based operations - appendLine() / appendLn()\n";
+        std::cout << "------------------------------------------------------\n";
+
+        // Basic line appending
+        std::cout << "Basic line appending:\n";
+        {
+            StringBuilder builder;
+            builder.appendLine( "First line" ).appendLine( "Second line" ).appendLine( "Third line" );
+
+            std::cout << "  Result:\n" << builder.toString();
+            std::cout << "  Note: Each appendLine() adds '\\n' automatically\n";
+            std::cout << "\n";
+        }
+
+        // Building CSV-like data
+        std::cout << "Building CSV-like data:\n";
+        {
+            StringBuilder builder;
+            builder.appendLine( "Name,Age,City" )
+                .appendLine( "Alice,30,Paris" )
+                .appendLine( "Bob,25,London" )
+                .appendLine( "Charlie,35,Berlin" );
+
+            std::cout << "  Result:\n" << builder.toString();
+            std::cout << "\n";
+        }
+
+        std::cout << "Building NMEA-0183 messages with checksums:\n";
+        {
+            StringBuilder builder;
+
+            // Helper lambda to build NMEA sentence with checksum
+            auto buildNmeaSentence = [&builder]( std::string_view sentence ) {
+                builder.append( "$" ).append( sentence );
+                std::string checksum = calculateNmeaChecksum( sentence );
+                builder.append( "*" ).append( checksum );
+                builder.appendLine();
+            };
+
+            // GPS Fix Data (GPGGA)
+            buildNmeaSentence( "GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,," );
+
+            // GPS DOP and active satellites (GPGSA)
+            buildNmeaSentence( "GPGSA,A,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1" );
+
+            // Satellites in view (GPGSV)
+            buildNmeaSentence( "GPGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45" );
+
+            // Meteorological Composite (WIMDA) - Full message
+            buildNmeaSentence( "WIMDA,29.92,I,1.013,B,15.5,C,10.2,C,45.0,,12.5,C,270.0,T,270.0,M,5.2,N,2.7,M" );
+
+            // Wind Speed and Angle (WIMWV)
+            buildNmeaSentence( "WIMWV,270.0,T,5.2,N,A" );
+
+            // Water Temperature (WIMTW)
+            buildNmeaSentence( "WIMTW,10.2,C" );
+
+            std::cout << "  Result:\n" << builder.toString();
+            std::cout << "  Note: All messages include valid NMEA-0183 checksums\n";
+            std::cout << "        Format: $SENTENCE*XX where XX is XOR checksum\n";
+            std::cout << "\n";
+        }
+
+        // Building a realistic NMEA-0183 data stream
+        std::cout << "Building realistic NMEA-0183 data stream:\n";
+        {
+            StringBuilder builder;
+
+            // Simulate a GPS/Weather station output
+            auto addNmea = [&builder]( std::string_view sentence ) {
+                builder.append( "$" ).append( sentence );
+                builder.append( "*" ).append( calculateNmeaChecksum( sentence ) );
+                builder.appendLine();
+            };
+
+            // Position update
+            addNmea( "GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W" );
+            addNmea( "GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,," );
+
+            // Weather data
+            addNmea( "WIMDA,30.12,I,1.020,B,18.3,C,12.5,C,52.0,,10.8,C,285.0,T,285.0,M,12.5,N,6.4,M" );
+            addNmea( "WIMWV,285.0,T,12.5,N,A" );
+
+            // Depth sounder
+            addNmea( "SDDBT,45.2,f,13.8,M,7.5,F" );
+
+            std::cout << "  Result:\n" << builder.toString();
+            std::cout << "\n";
+        }
+
+        // Building log entries
+        std::cout << "Building multi-line log entries:\n";
+        {
+            StringBuilder builder;
+
+            auto now = std::chrono::system_clock::now();
+            auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>( now.time_since_epoch() ).count();
+
+            builder.appendLine( "[INFO] Application started" )
+                .append( "[DEBUG] Timestamp: " )
+                .append( timestamp )
+                .appendLine()
+                .appendLine( "[INFO] Configuration loaded" )
+                .appendLine( "[WARN] Cache not found, creating new" );
+
+            std::cout << "  Result:\n" << builder.toString();
+            std::cout << "\n";
+        }
+
+        // Building JSON-like structure (simplified)
+        std::cout << "Building structured text:\n";
+        {
+            StringBuilder builder;
+            builder.appendLine( "{" )
+                .appendLine( "  \"name\": \"StringBuilder\"," )
+                .appendLine( "  \"version\": \"0.5.0\"," )
+                .appendLine( "  \"features\": [" )
+                .appendLine( "    \"SBO\"," )
+                .appendLine( "    \"Zero-copy\"," )
+                .appendLine( "    \"High-performance\"" )
+                .appendLine( "  ]" )
+                .appendLine( "}" );
+
+            std::cout << "  Result:\n" << builder.toString();
+            std::cout << "  Note: Indentation handled manually\n";
+            std::cout << "\n";
+        }
+
+        std::cout << "\n";
+    }
+
+    //=====================================================================
+    // 16. Prepend operations - Building strings in reverse
+    //=====================================================================
+    {
+        std::cout << "16. Prepend operations - Building strings in reverse\n";
         std::cout << "----------------------------------------------------\n";
 
         // Basic prepend

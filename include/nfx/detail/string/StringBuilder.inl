@@ -321,6 +321,48 @@ namespace nfx::string
     }
 
     //----------------------------------------------
+    // Line operations
+    //----------------------------------------------
+
+    inline StringBuilder& StringBuilder::appendLine( std::string_view str )
+    {
+        const size_t len = str.size();
+        const size_t newSize = m_size + len + 1; // +1 for newline
+
+        if( newSize > m_capacity ) [[unlikely]]
+        {
+            ensureCapacity( newSize );
+        }
+
+        // Append string content
+        if( len > 0 )
+        {
+            std::memcpy( m_buffer + m_size, str.data(), len );
+        }
+
+        // Append newline
+        m_buffer[m_size + len] = '\n';
+        m_size = newSize;
+
+        return *this;
+    }
+
+    inline StringBuilder& StringBuilder::appendLine( const std::string& str )
+    {
+        return appendLine( std::string_view{ str } );
+    }
+
+    inline StringBuilder& StringBuilder::appendLine( const char* str )
+    {
+        if( str ) [[likely]]
+        {
+            return appendLine( std::string_view{ str, strlen( str ) } );
+        }
+        // Just append newline if str is null
+        return append( '\n' );
+    }
+
+    //----------------------------------------------
     // Prepend operations
     //----------------------------------------------
 
