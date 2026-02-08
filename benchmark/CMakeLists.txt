@@ -119,7 +119,11 @@ endif()
 set(benchmark_sources "")
 
 list(APPEND benchmark_sources
-    BM_StringBuilder.cpp
+    BM_Comparative.cpp
+    BM_StringBuilder_Advanced.cpp
+    BM_StringBuilder_Core.cpp
+    BM_StringBuilder_Join.cpp
+    BM_StringBuilder_Lines.cpp
 )
 
 #----------------------------------------------
