@@ -18,6 +18,8 @@ ALL_BUILD.vcxproj*
 ZERO_CHECK.vcxproj*
 RUN_TESTS.vcxproj*
 TESTS_*.vcxproj*
+.qtcreator
+CMakeLists.txt.user
 
 # cpp build directory
 build/
@@ -87,4 +89,3 @@ coverage/
 # Project-specific build artifacts
 nfx-stringbuilder*/
 lib/
-tests/TESTS_*[1]_*
