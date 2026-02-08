@@ -35,7 +35,7 @@ enable_testing()
 #----------------------------------------------
 
 # --- Library build types ---
-option(NFX_STRINGBUILDER_BUILD_STATIC                 "Build static library"               OFF)
+option(NFX_STRINGBUILDER_BUILD_STATIC                 "Build static library"               ON )
 option(NFX_STRINGBUILDER_BUILD_SHARED                 "Build shared library"               OFF)
 
 # --- Build components ---
