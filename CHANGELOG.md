@@ -4,12 +4,11 @@
 
 ### Added
 
-- Line-based operations: `appendLine(str)` and `appendLn(str)` - append string with automatic newline character
-- Join operations: `join(container, delimiter)` - join collection elements with delimiter (supports both `string_view` and `char` delimiters)
+- NIL
 
 ### Changed
 
-- chore(deps): bump google-benchmark from 1.9.4 to 1.9.5
+- NIL
 
 ### Deprecated
 
@@ -26,7 +25,18 @@
 ### Security
 
 - NIL
-  
+
+## [0.6.0] - 2026-02-11
+
+### Added
+
+- Line-based operations: `appendLine(str)` and `appendLn(str)` - append string with automatic newline character
+- Join operations: `join(container, delimiter)` - join collection elements with delimiter (supports both `string_view` and `char` delimiters)
+
+### Changed
+
+- chore(deps): bump google-benchmark from 1.9.4 to 1.9.5
+
 ## [0.5.0] - 2026-01-27
 
 ### Added

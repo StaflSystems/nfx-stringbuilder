@@ -9,7 +9,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 project(nfx-stringbuilder
-    VERSION 0.5.0
+    VERSION 0.6.0
     DESCRIPTION "Cross-platform C++20 library for zero-allocation string building with Small Buffer Optimization"
     HOMEPAGE_URL "https://github.com/nfx-libs/nfx-stringbuilder"
     LANGUAGES CXX
