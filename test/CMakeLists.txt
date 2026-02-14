@@ -71,7 +71,7 @@ endif()
 set(test_sources "")
 
 list(APPEND test_sources
-    TESTS_StringBuilder.cpp
+    Tests_StringBuilder.cpp
 )
 
 #----------------------------------------------

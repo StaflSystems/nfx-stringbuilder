@@ -23,7 +23,7 @@
  */
 
 /**
- * @file TESTS_StringBuilder.cpp
+ * @file Tests_StringBuilder.cpp
  * @brief UNit tests for nfx-stringbuilder high-performance string building
  * @details Tests covering StringBuilder functionality including construction, capacity management,
  *          data access, append operations, formatting, string conversion, and iterators

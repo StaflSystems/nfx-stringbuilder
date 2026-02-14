@@ -26,6 +26,16 @@
 
 - NIL
 
+## [0.6.1] - 2026-02-14
+
+### Changed
+
+- build: enforce strict compiler warnings (`-Wall -Wextra -Werror` for GCC/Clang, `/W4 /WX` for MSVC)
+
+### Fixed
+
+- Missing `#include <array>` in `samples/Sample_StringBuilder.cpp`
+
 ## [0.6.0] - 2026-02-11
 
 ### Added
