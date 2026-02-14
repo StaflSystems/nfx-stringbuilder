@@ -26,6 +26,12 @@
 
 - NIL
 
+## [0.6.2] - 2026-02-14
+
+### Changed
+
+- build: extend strict compiler warnings to benchmarks, samples, and tests targets
+
 ## [0.6.1] - 2026-02-14
 
 ### Changed
