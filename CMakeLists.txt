@@ -45,6 +45,9 @@ option(NFX_STRINGBUILDER_BUILD_BENCHMARKS             "Build benchmarks"        
 option(NFX_STRINGBUILDER_BUILD_COMPARATIVE_BENCHMARKS "Build comparative benchmarks"       OFF)
 option(NFX_STRINGBUILDER_BUILD_DOCUMENTATION          "Build Doxygen documentation"        OFF)
 
+# --- Performance optimizations ---
+option(NFX_STRINGBUILDER_ENABLE_SIMD                  "Enable SIMD optimizations"          ON )
+
 # --- Installation ---
 option(NFX_STRINGBUILDER_INSTALL_PROJECT              "Install project"                    OFF)
 

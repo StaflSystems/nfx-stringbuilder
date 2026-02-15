@@ -75,11 +75,46 @@ function(configure_target target_name)
     )
 
     # --- Enable specific CPU features ---
-    target_compile_options(${target_name}
-        PRIVATE
-            $<$<CXX_COMPILER_ID:MSVC>:/arch:AVX2>
-            $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:-march=native>
-    )
+    if(NFX_STRINGBUILDER_ENABLE_SIMD)
+        include(CheckCXXSourceCompiles)
+
+        # GCC/Clang: -march=native or fallback to -mavx2
+        if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+            # Check if compiler supports -march=native
+            set(CMAKE_REQUIRED_FLAGS "-march=native")
+            check_cxx_source_compiles("int main() { return 0; }" COMPILER_SUPPORTS_MARCH_NATIVE)
+            unset(CMAKE_REQUIRED_FLAGS)
+
+            if(COMPILER_SUPPORTS_MARCH_NATIVE)
+                target_compile_options(${target_name}
+                    PRIVATE
+                        $<$<CONFIG:Release>:-march=native>
+                        $<$<CONFIG:RelWithDebInfo>:-march=native>
+                )
+                message(STATUS "nfx-stringbuilder: Enabling native CPU optimizations (GCC/Clang -march=native)")
+            else()
+                # Fallback to explicit AVX2
+                target_compile_options(${target_name}
+                    PRIVATE
+                        $<$<CONFIG:Release>:-mavx2>
+                        $<$<CONFIG:RelWithDebInfo>:-mavx2>
+                )
+                message(STATUS "nfx-stringbuilder: Enabling AVX2 support (GCC/Clang -mavx2)")
+            endif()
+        elseif(MSVC)
+            # MSVC: /arch:AVX2
+            target_compile_options(${target_name}
+                PRIVATE
+                    $<$<CONFIG:Release>:/arch:AVX2>
+                    $<$<CONFIG:RelWithDebInfo>:/arch:AVX2>
+            )
+            message(STATUS "nfx-stringbuilder: Enabling AVX2 support (MSVC /arch:AVX2)")
+        endif()
+
+        # Note: Debug builds intentionally do NOT enable SIMD for easier debugging
+    else()
+        message(STATUS "nfx-stringbuilder: SIMD optimizations disabled (NFX_STRINGBUILDER_ENABLE_SIMD=OFF)")
+    endif()
 
     # --- Compiler warnings ---
     target_compile_options(${target_name}
