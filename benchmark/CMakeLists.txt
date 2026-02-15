@@ -165,11 +165,35 @@ foreach(benchmark_source ${benchmark_sources})
         # Enable specific CPU features
         #----------------------------------------------
 
-        target_compile_options(${benchmark_target_name}
-            PRIVATE
-                $<$<CXX_COMPILER_ID:MSVC>:/arch:AVX2>
-                $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:-march=native>
-        )
+        if(NFX_STRINGBUILDER_ENABLE_SIMD)
+            include(CheckCXXSourceCompiles)
+
+            if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+                set(CMAKE_REQUIRED_FLAGS "-march=native")
+                check_cxx_source_compiles("int main() { return 0; }" COMPILER_SUPPORTS_MARCH_NATIVE)
+                unset(CMAKE_REQUIRED_FLAGS)
+
+                if(COMPILER_SUPPORTS_MARCH_NATIVE)
+                    target_compile_options(${benchmark_target_name}
+                        PRIVATE
+                            $<$<CONFIG:Release>:-march=native>
+                            $<$<CONFIG:RelWithDebInfo>:-march=native>
+                    )
+                else()
+                    target_compile_options(${benchmark_target_name}
+                        PRIVATE
+                            $<$<CONFIG:Release>:-mavx2>
+                            $<$<CONFIG:RelWithDebInfo>:-mavx2>
+                    )
+                endif()
+            elseif(MSVC)
+                target_compile_options(${benchmark_target_name}
+                    PRIVATE
+                        $<$<CONFIG:Release>:/arch:AVX2>
+                        $<$<CONFIG:RelWithDebInfo>:/arch:AVX2>
+                )
+            endif()
+        endif()
 
         #----------------------------------------------
         # Compiler warnings

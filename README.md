@@ -2,7 +2,7 @@
 
 <!-- Project Info -->
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://github.com/nfx-libs/nfx-stringbuilder/blob/main/LICENSE.txt) [![GitHub release (latest by date)](https://img.shields.io/github/v/release/nfx-libs/nfx-stringbuilder?style=flat-square)](https://github.com/nfx-libs/nfx-stringbuilder/releases) [![GitHub tag (latest by date)](https://img.shields.io/github/tag/nfx-libs/nfx-stringbuilder?style=flat-square)](https://github.com/nfx-libs/nfx-stringbuilder/tags)<br/>
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://github.com/nfx-libs/nfx-stringbuilder/blob/main/LICENSE) [![GitHub release (latest by date)](https://img.shields.io/github/v/release/nfx-libs/nfx-stringbuilder?style=flat-square)](https://github.com/nfx-libs/nfx-stringbuilder/releases) [![GitHub tag (latest by date)](https://img.shields.io/github/tag/nfx-libs/nfx-stringbuilder?style=flat-square)](https://github.com/nfx-libs/nfx-stringbuilder/tags)<br/>
 
 ![C++20](https://img.shields.io/badge/C%2B%2B-20-blue?style=flat-square) ![CMake](https://img.shields.io/badge/CMake-3.20%2B-green.svg?style=flat-square) ![Cross Platform](https://img.shields.io/badge/Platform-Linux_Windows-lightgrey?style=flat-square)
 
@@ -77,15 +77,14 @@ option(NFX_STRINGBUILDER_BUILD_BENCHMARKS             "Build benchmarks"        
 option(NFX_STRINGBUILDER_BUILD_COMPARATIVE_BENCHMARKS "Build comparative benchmarks"       OFF)
 option(NFX_STRINGBUILDER_BUILD_DOCUMENTATION          "Build Doxygen documentation"        OFF)
 
+# --- Performance optimizations ---
+option(NFX_STRINGBUILDER_ENABLE_SIMD                  "Enable SIMD optimizations"          ON )
+
 # --- Installation ---
 option(NFX_STRINGBUILDER_INSTALL_PROJECT              "Install project"                    OFF)
 
 # --- Packaging ---
 option(NFX_STRINGBUILDER_PACKAGE_SOURCE               "Enable source package generation"   OFF)
-option(NFX_STRINGBUILDER_PACKAGE_ARCHIVE              "Enable TGZ/ZIP package generation"  OFF)
-option(NFX_STRINGBUILDER_PACKAGE_DEB                  "Enable DEB package generation"      OFF)
-option(NFX_STRINGBUILDER_PACKAGE_RPM                  "Enable RPM package generation"      OFF)
-option(NFX_STRINGBUILDER_PACKAGE_WIX                  "Enable WiX Windows installer (MSI)" OFF)
 ```
 
 ### Using in Your Project
@@ -527,57 +526,6 @@ void demonstrateMultithreading()
 [INFO] User logged in: username=john.doe, ip=192.168.1.100, timestamp=2025-10-31
 [ERROR] Connection failed: timeout after 30s
 ```
-
-## Installation & Packaging
-
-nfx-stringbuilder provides comprehensive packaging options for distribution.
-
-### Package Generation
-
-```bash
-# Configure with packaging options
-cmake .. -DCMAKE_BUILD_TYPE=Release \
-         -DNFX_STRINGBUILDER_BUILD_STATIC=ON \
-         -DNFX_STRINGBUILDER_BUILD_SHARED=ON \
-         -DNFX_STRINGBUILDER_PACKAGE_ARCHIVE=ON \
-         -DNFX_STRINGBUILDER_PACKAGE_DEB=ON \
-         -DNFX_STRINGBUILDER_PACKAGE_RPM=ON
-
-# Generate binary packages
-cmake --build . --target package
-# or
-cd build && cpack
-
-# Generate source packages
-cd build && cpack --config CPackSourceConfig.cmake
-```
-
-### Supported Package Formats
-
-| Format      | Platform       | Description                        | Requirements |
-| ----------- | -------------- | ---------------------------------- | ------------ |
-| **TGZ/ZIP** | Cross-platform | Compressed archive packages        | None         |
-| **DEB**     | Debian/Ubuntu  | Native Debian packages             | `dpkg-dev`   |
-| **RPM**     | RedHat/SUSE    | Native RPM packages                | `rpm-build`  |
-| **WiX**     | Windows        | Professional MSI installer         | `WiX 3.11+`  |
-| **Source**  | Cross-platform | Source code distribution (TGZ+ZIP) | None         |
-
-### Installation
-
-```bash
-# Linux (DEB-based systems)
-sudo dpkg -i nfx-stringbuilder_*_amd64.deb
-
-# Linux (RPM-based systems)
-sudo rpm -ivh nfx-stringbuilder-*-Linux.rpm
-
-# Windows (MSI installer)
-nfx-stringbuilder-0.1.0-MSVC.msi
-
-# Manual installation (extract archive)
-tar -xzf nfx-stringbuilder-*-Linux.tar.gz -C /usr/local/
-```
-
 ## Project Structure
 
 ```
@@ -621,4 +569,4 @@ All dependencies are automatically fetched via CMake FetchContent when building 
 
 ---
 
-_Updated on January 06, 2026_
+_Updated on February 15, 2026_

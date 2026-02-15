@@ -26,6 +26,17 @@
 
 - NIL
 
+## [0.7.0] - 2026-02-15
+
+### Added
+
+- build: `NFX_STRINGBUILDER_ENABLE_SIMD` option to control SIMD optimizations (ON by default, can be disabled for WASM targets)
+
+### Changed
+
+- build: simplified CMake packaging configuration (source packages only, removed DEB/RPM/WIX complexity)
+- build: cleaned up CMake structure and removed redundant configuration options
+
 ## [0.6.2] - 2026-02-14
 
 ### Changed

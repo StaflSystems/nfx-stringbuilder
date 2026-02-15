@@ -9,7 +9,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 project(nfx-stringbuilder
-    VERSION 0.6.2
+    VERSION 0.7.0
     DESCRIPTION "Cross-platform C++20 library for zero-allocation string building with Small Buffer Optimization"
     HOMEPAGE_URL "https://github.com/nfx-libs/nfx-stringbuilder"
     LANGUAGES CXX
@@ -53,10 +53,6 @@ option(NFX_STRINGBUILDER_INSTALL_PROJECT              "Install project"         
 
 # --- Packaging ---
 option(NFX_STRINGBUILDER_PACKAGE_SOURCE               "Enable source package generation"   OFF)
-option(NFX_STRINGBUILDER_PACKAGE_ARCHIVE              "Enable TGZ/ZIP package generation"  OFF)
-option(NFX_STRINGBUILDER_PACKAGE_DEB                  "Enable DEB package generation"      OFF)
-option(NFX_STRINGBUILDER_PACKAGE_RPM                  "Enable RPM package generation"      OFF)
-option(NFX_STRINGBUILDER_PACKAGE_WIX                  "Enable WiX Windows installer (MSI)" OFF)
 
 #----------------------------------------------
 # CMake modules configuration

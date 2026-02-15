@@ -2,28 +2,23 @@
 # nfx-stringbuilder - Doxygen documentation
 #==============================================================================
 
-#----------------------------------------------
-# Documentation condition check
-#----------------------------------------------
-
+# --- Documentation condition check ---
 if(NOT NFX_STRINGBUILDER_BUILD_DOCUMENTATION)
     return()
 endif()
 
-#----------------------------------------------
-# Doxygen tool detection
-#----------------------------------------------
-
+# --- Doxygen Tool Detection ---
 find_package(Doxygen COMPONENTS dot)
 
-#----------------------------------------------
-# Doxygen configuration setup
-#----------------------------------------------
-
+# --- Doxygen Configuration Setup ---
 if(Doxygen_FOUND)
     message(STATUS "Doxygen found: ${Doxygen_EXECUTABLE}")
     message(STATUS "Doxygen Dot (from Graphviz) found: ${Doxygen_DOT_EXECUTABLE}")
     message(STATUS "Configuring Doxygen documentation...")
+
+    # --- Define required paths ---
+    set(NFX_STRINGBUILDER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/..")
+    set(NFX_STRINGBUILDER_INCLUDE_DIR "${NFX_STRINGBUILDER_DIR}/include")
 
     # --- Project ---
     set(DOXYGEN_PROJECT_NAME            ${PROJECT_NAME})
@@ -116,9 +111,6 @@ if(Doxygen_FOUND)
     set(DOXYGEN_HTML_HEADER              "")
     set(DOXYGEN_HTML_FOOTER              "")
     set(DOXYGEN_HTML_CODE_FOLDING        "YES")
-    #set(DOXYGEN_HTML_STYLESHEET          "doxygen.css")
-    #set(DOXYGEN_HTML_EXTRA_STYLESHEET    "customdoxygen.css")
-    #set(DOXYGEN_HTML_EXTRA_FILES         "${CMAKE_CURRENT_SOURCE_DIR}/customdoxygen.css")
     set(DOXYGEN_USE_MDFILE_AS_MAINPAGE   "${NFX_STRINGBUILDER_DIR}/README.md")
     set(DOXYGEN_HTML_COLORSTYLE          "DARK")
     set(DOXYGEN_HTML_COLORSTYLE_HUE      "220")
@@ -128,28 +120,6 @@ if(Doxygen_FOUND)
     set(DOXYGEN_HTML_DYNAMIC_MENUS       "NO")
     set(DOXYGEN_HTML_DYNAMIC_SECTIONS    "NO")
     set(DOXYGEN_HTML_INDEX_NUM_ENTRIES   "100")
-    set(DOXYGEN_GENERATE_DOCSET          "NO")
-    #set(DOXYGEN_DOCSET_FEEDNAME          "Doxygen generated docs")
-    #set(DOXYGEN_DOCSET_BUNDLE_ID         "org.doxygen.Project")
-    #set(DOXYGEN_DOCSET_PUBLISHER_ID      "org.doxygen.Publisher")
-    #set(DOXYGEN_DOCSET_PUBLISHER_NAME    "Publisher")
-    set(DOXYGEN_GENERATE_HTMLHELP        "NO")
-    set(DOXYGEN_CHM_FILE                 "")
-    set(DOXYGEN_HHC_LOCATION             "")
-    set(DOXYGEN_GENERATE_CHI             "NO")
-    set(DOXYGEN_CHM_INDEX_ENCODING       "")
-    set(DOXYGEN_BINARY_TOC               "NO")
-    set(DOXYGEN_TOC_EXPAND               "NO")
-    set(DOXYGEN_GENERATE_QHP             "NO")
-    set(DOXYGEN_QCH_FILE                 "")
-    set(DOXYGEN_QHP_NAMESPACE            "org.doxygen.Project")
-    set(DOXYGEN_QHP_VIRTUAL_FOLDER       "doc")
-    set(DOXYGEN_QHP_CUST_FILTER_NAME     "")
-    set(DOXYGEN_QHP_CUST_FILTER_ATTRS    "")
-    set(DOXYGEN_QHP_SECT_FILTER_ATTRS    "")
-    set(DOXYGEN_QHG_LOCATION             "")
-    set(DOXYGEN_GENERATE_ECLIPSEHELP     "NO")
-    set(DOXYGEN_ECLIPSE_DOC_ID           "org.doxygen.Project")
     set(DOXYGEN_DISABLE_INDEX            "NO")
     set(DOXYGEN_GENERATE_TREEVIEW        "YES")
     set(DOXYGEN_ENUM_VALUES_PER_LINE     "1")
@@ -206,8 +176,8 @@ if(Doxygen_FOUND)
     set(DOXYGEN_TEMPLATE_RELATIONS       "NO")
     set(DOXYGEN_INCLUDE_GRAPH            "YES")
     set(DOXYGEN_INCLUDED_BY_GRAPH        "YES")
-    set(DOXYGEN_CALL_GRAPH               "YES")
-    set(DOXYGEN_CALLER_GRAPH             "YES")
+    set(DOXYGEN_CALL_GRAPH               "NO")   # Disabled for faster generation
+    set(DOXYGEN_CALLER_GRAPH             "NO")   # Disabled for faster generation
     set(DOXYGEN_GRAPHICAL_HIERARCHY      "YES")
     set(DOXYGEN_DIRECTORY_GRAPH          "YES")
     set(DOXYGEN_DOT_IMAGE_FORMAT         "png")
