@@ -70,7 +70,7 @@ namespace nfx::string
           m_capacity{ other.m_capacity },
           m_onHeap{ other.m_onHeap }
     {
-        if( m_onHeap ) [[likely]]
+        if( m_onHeap ) NFX_STRINGBUILDER_LIKELY
         {
             m_heapBuffer = std::make_unique<char[]>( m_capacity );
             m_buffer = m_heapBuffer.get();
@@ -89,7 +89,7 @@ namespace nfx::string
           m_capacity{ other.m_capacity },
           m_onHeap{ other.m_onHeap }
     {
-        if( !m_onHeap ) [[likely]]
+        if( !m_onHeap ) NFX_STRINGBUILDER_LIKELY
         {
             // Fast move: just copy stack buffer content without clearing source
             std::memcpy( m_stackBuffer, other.m_stackBuffer, m_size );
@@ -108,7 +108,7 @@ namespace nfx::string
 
     StringBuilder& StringBuilder::operator=( const StringBuilder& other )
     {
-        if( this != &other ) [[likely]]
+        if( this != &other ) NFX_STRINGBUILDER_LIKELY
         {
             if( other.m_onHeap )
             {
@@ -141,7 +141,7 @@ namespace nfx::string
 
     StringBuilder& StringBuilder::operator=( StringBuilder&& other ) noexcept
     {
-        if( this != &other ) [[likely]]
+        if( this != &other ) NFX_STRINGBUILDER_LIKELY
         {
             m_heapBuffer = std::move( other.m_heapBuffer );
             m_size = other.m_size;
@@ -172,7 +172,7 @@ namespace nfx::string
 
     StringBuilder& StringBuilder::prepend( std::string_view str )
     {
-        if( str.empty() ) [[unlikely]]
+        if( str.empty() ) NFX_STRINGBUILDER_UNLIKELY
         {
             return *this;
         }
@@ -180,7 +180,7 @@ namespace nfx::string
         const size_t len = str.size();
         const size_t newSize = m_size + len;
 
-        if( newSize > m_capacity ) [[unlikely]]
+        if( newSize > m_capacity ) NFX_STRINGBUILDER_UNLIKELY
         {
             ensureCapacity( newSize );
         }
@@ -188,7 +188,7 @@ namespace nfx::string
         char* buf = m_buffer;
 
         // Shift existing content to the right using memmove (handles overlap)
-        if( m_size > 0 ) [[likely]]
+        if( m_size > 0 ) NFX_STRINGBUILDER_LIKELY
         {
             std::memmove( buf + len, buf, m_size );
         }
@@ -226,7 +226,7 @@ namespace nfx::string
         {
             // Transition from stack to heap
             m_heapBuffer = std::make_unique<char[]>( newCapacity );
-            if( m_size > 0 ) [[likely]]
+            if( m_size > 0 ) NFX_STRINGBUILDER_LIKELY
             {
                 std::memcpy( m_heapBuffer.get(), m_stackBuffer, m_size );
             }
@@ -238,7 +238,7 @@ namespace nfx::string
         {
             // Expand existing heap buffer
             auto newBuffer = std::make_unique<char[]>( newCapacity );
-            if( m_size > 0 ) [[likely]]
+            if( m_size > 0 ) NFX_STRINGBUILDER_LIKELY
             {
                 std::memcpy( newBuffer.get(), m_heapBuffer.get(), m_size );
             }

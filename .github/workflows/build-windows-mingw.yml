@@ -23,7 +23,11 @@ permissions:
 jobs:
   build-windows-mingw:
     runs-on: windows-2022
-    name: Windows MinGW
+    name: Windows MinGW (C++${{ matrix.std }})
+    strategy:
+      fail-fast: false
+      matrix:
+        std: [17, 20]
 
     steps:
       - name: Checkout repository
@@ -37,9 +41,9 @@ jobs:
           path: |
             build
             ${{ runner.temp }}/ccache
-          key: ${{ runner.os }}-mingw-ninja-${{ hashFiles('**/CMakeLists.txt', 'include/**') }}
+          key: ${{ runner.os }}-mingw-cxx${{ matrix.std }}-ninja-${{ hashFiles('**/CMakeLists.txt', 'include/**') }}
           restore-keys: |
-            ${{ runner.os }}-mingw-ninja-
+            ${{ runner.os }}-mingw-cxx${{ matrix.std }}-ninja-
 
       - name: Set up MinGW
         uses: msys2/setup-msys2@v2
@@ -72,6 +76,7 @@ jobs:
           cmake -B build \
                 -G "Ninja" \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+                -DNFX_STRINGBUILDER_CXX_STANDARD=${{ matrix.std }} \
                 -DNFX_STRINGBUILDER_BUILD_STATIC=ON \
                 -DNFX_STRINGBUILDER_BUILD_SHARED=ON \
                 -DNFX_STRINGBUILDER_BUILD_TESTS=ON \
@@ -94,7 +99,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-windows-mingw
+          name: test-results-windows-mingw-cxx${{ matrix.std }}
           path: |
             build/Testing/Temporary/LastTest.log
             build/Testing/Temporary/LastTestsFailed.log

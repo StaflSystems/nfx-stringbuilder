@@ -34,12 +34,15 @@
 #include <array>
 #include <chrono>
 #include <cstring>
-#include <format>
 #include <iostream>
 #include <iomanip>
 #include <string>
 #include <vector>
 #include <thread>
+
+#if defined( NFX_STRINGBUILDER_HAS_STD_FORMAT )
+#    include <format>
+#endif
 
 //=====================================================================
 // Helper function: Calculate NMEA-0183 checksum
@@ -238,6 +241,7 @@ int main()
         std::cout << "8. std::format integration with StringBuilder\n";
         std::cout << "-----------------------------------------------\n";
 
+#if defined( NFX_STRINGBUILDER_HAS_STD_FORMAT )
         StringBuilder builder;
         builder.append( "Formatted content" );
 
@@ -250,6 +254,9 @@ int main()
         std::cout << std::format( "Debug: buffer size={}, content={}\n", builder.size(), builder );
 
         std::cout << "Note: Zero-copy formatting via std::formatter specialization\n";
+#else
+        std::cout << "Note: std::format integration requires C++20 (disabled in this build)\n";
+#endif
         std::cout << "\n";
     }
 
@@ -260,6 +267,7 @@ int main()
         std::cout << "9. std::format integration with StringBuilder\n";
         std::cout << "----------------------------------------------\n";
 
+#if defined( NFX_STRINGBUILDER_HAS_STD_FORMAT )
         StringBuilder builder;
         builder.append( "Building..." );
 
@@ -269,6 +277,9 @@ int main()
         std::cout << std::format( "After append: {}\n", builder );
 
         std::cout << "Note: Useful for debugging string construction process\n";
+#else
+        std::cout << "Note: std::format integration requires C++20 (disabled in this build)\n";
+#endif
         std::cout << "\n";
     }
 
@@ -317,6 +328,7 @@ int main()
         std::cout << "11. Type-safe formatting with format() method\n";
         std::cout << "----------------------------------------------\n";
 
+#if defined( NFX_STRINGBUILDER_HAS_STD_FORMAT )
         StringBuilder builder;
 
         std::string username = "Alice";
@@ -345,6 +357,9 @@ int main()
         std::cout << "Chaining: " << builder.toString() << "\n";
 
         std::cout << "Note: format() uses std::format internally for zero-overhead type-safe formatting\n";
+#else
+        std::cout << "Note: std::format-based formatting requires C++20 (disabled in this build)\n";
+#endif
         std::cout << "\n";
     }
 

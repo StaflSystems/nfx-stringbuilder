@@ -211,7 +211,7 @@ foreach(benchmark_source ${benchmark_sources})
 
         set_target_properties(${benchmark_target_name}
             PROPERTIES
-                CXX_STANDARD 20
+                CXX_STANDARD ${NFX_STRINGBUILDER_CXX_STANDARD}
                 CXX_STANDARD_REQUIRED ON
                 CXX_EXTENSIONS OFF
                 POSITION_INDEPENDENT_CODE ON

@@ -112,7 +112,7 @@ namespace nfx::string
 
     inline void StringBuilder::reserve( size_t newCapacity )
     {
-        if( newCapacity > m_capacity ) [[likely]]
+        if( newCapacity > m_capacity ) NFX_STRINGBUILDER_LIKELY
         {
             ensureCapacity( newCapacity );
         }
@@ -135,7 +135,7 @@ namespace nfx::string
 
     inline StringBuilder& StringBuilder::append( std::string_view str )
     {
-        if( str.empty() ) [[unlikely]]
+        if( str.empty() ) NFX_STRINGBUILDER_UNLIKELY
         {
             return *this;
         }
@@ -143,7 +143,7 @@ namespace nfx::string
         const size_t len = str.size();
         const size_t newSize = m_size + len;
 
-        if( newSize > m_capacity ) [[unlikely]]
+        if( newSize > m_capacity ) NFX_STRINGBUILDER_UNLIKELY
         {
             ensureCapacity( newSize );
         }
@@ -156,7 +156,7 @@ namespace nfx::string
 
     inline StringBuilder& StringBuilder::append( const char* str )
     {
-        if( str ) [[likely]]
+        if( str ) NFX_STRINGBUILDER_LIKELY
         {
             return append( std::string_view{ str, strlen( str ) } );
         }
@@ -172,7 +172,7 @@ namespace nfx::string
 
     inline StringBuilder& StringBuilder::append( char c )
     {
-        if( m_size + 1 > m_capacity ) [[unlikely]]
+        if( m_size + 1 > m_capacity ) NFX_STRINGBUILDER_UNLIKELY
         {
             ensureCapacity( m_size + 1 );
         }
@@ -182,12 +182,12 @@ namespace nfx::string
 
     inline StringBuilder& StringBuilder::append( std::int8_t value )
     {
-        if( m_size + INT8_MAX_DIGITS > m_capacity ) [[unlikely]]
+        if( m_size + INT8_MAX_DIGITS > m_capacity ) NFX_STRINGBUILDER_UNLIKELY
         {
             ensureCapacity( m_size + INT8_MAX_DIGITS );
         }
         auto [ptr, ec] = std::to_chars( m_buffer + m_size, m_buffer + m_capacity, static_cast<int>( value ) );
-        if( ec == std::errc() ) [[likely]]
+        if( ec == std::errc() ) NFX_STRINGBUILDER_LIKELY
         {
             m_size = ptr - m_buffer;
         }
@@ -196,12 +196,12 @@ namespace nfx::string
 
     inline StringBuilder& StringBuilder::append( std::uint8_t value )
     {
-        if( m_size + UINT8_MAX_DIGITS > m_capacity ) [[unlikely]]
+        if( m_size + UINT8_MAX_DIGITS > m_capacity ) NFX_STRINGBUILDER_UNLIKELY
         {
             ensureCapacity( m_size + UINT8_MAX_DIGITS );
         }
         auto [ptr, ec] = std::to_chars( m_buffer + m_size, m_buffer + m_capacity, static_cast<unsigned>( value ) );
-        if( ec == std::errc() ) [[likely]]
+        if( ec == std::errc() ) NFX_STRINGBUILDER_LIKELY
         {
             m_size = ptr - m_buffer;
         }
@@ -210,12 +210,12 @@ namespace nfx::string
 
     inline StringBuilder& StringBuilder::append( std::int16_t value )
     {
-        if( m_size + INT16_MAX_DIGITS > m_capacity ) [[unlikely]]
+        if( m_size + INT16_MAX_DIGITS > m_capacity ) NFX_STRINGBUILDER_UNLIKELY
         {
             ensureCapacity( m_size + INT16_MAX_DIGITS );
         }
         auto [ptr, ec] = std::to_chars( m_buffer + m_size, m_buffer + m_capacity, value );
-        if( ec == std::errc() ) [[likely]]
+        if( ec == std::errc() ) NFX_STRINGBUILDER_LIKELY
         {
             m_size = ptr - m_buffer;
         }
@@ -224,12 +224,12 @@ namespace nfx::string
 
     inline StringBuilder& StringBuilder::append( std::uint16_t value )
     {
-        if( m_size + UINT16_MAX_DIGITS > m_capacity ) [[unlikely]]
+        if( m_size + UINT16_MAX_DIGITS > m_capacity ) NFX_STRINGBUILDER_UNLIKELY
         {
             ensureCapacity( m_size + UINT16_MAX_DIGITS );
         }
         auto [ptr, ec] = std::to_chars( m_buffer + m_size, m_buffer + m_capacity, value );
-        if( ec == std::errc() ) [[likely]]
+        if( ec == std::errc() ) NFX_STRINGBUILDER_LIKELY
         {
             m_size = ptr - m_buffer;
         }
@@ -238,12 +238,12 @@ namespace nfx::string
 
     inline StringBuilder& StringBuilder::append( std::int32_t value )
     {
-        if( m_size + INT32_MAX_DIGITS > m_capacity ) [[unlikely]]
+        if( m_size + INT32_MAX_DIGITS > m_capacity ) NFX_STRINGBUILDER_UNLIKELY
         {
             ensureCapacity( m_size + INT32_MAX_DIGITS );
         }
         auto [ptr, ec] = std::to_chars( m_buffer + m_size, m_buffer + m_capacity, value );
-        if( ec == std::errc() ) [[likely]]
+        if( ec == std::errc() ) NFX_STRINGBUILDER_LIKELY
         {
             m_size = ptr - m_buffer;
         }
@@ -252,12 +252,12 @@ namespace nfx::string
 
     inline StringBuilder& StringBuilder::append( std::uint32_t value )
     {
-        if( m_size + UINT32_MAX_DIGITS > m_capacity ) [[unlikely]]
+        if( m_size + UINT32_MAX_DIGITS > m_capacity ) NFX_STRINGBUILDER_UNLIKELY
         {
             ensureCapacity( m_size + UINT32_MAX_DIGITS );
         }
         auto [ptr, ec] = std::to_chars( m_buffer + m_size, m_buffer + m_capacity, value );
-        if( ec == std::errc() ) [[likely]]
+        if( ec == std::errc() ) NFX_STRINGBUILDER_LIKELY
         {
             m_size = ptr - m_buffer;
         }
@@ -266,12 +266,12 @@ namespace nfx::string
 
     inline StringBuilder& StringBuilder::append( std::int64_t value )
     {
-        if( m_size + INT64_MAX_DIGITS > m_capacity ) [[unlikely]]
+        if( m_size + INT64_MAX_DIGITS > m_capacity ) NFX_STRINGBUILDER_UNLIKELY
         {
             ensureCapacity( m_size + INT64_MAX_DIGITS );
         }
         auto [ptr, ec] = std::to_chars( m_buffer + m_size, m_buffer + m_capacity, value );
-        if( ec == std::errc() ) [[likely]]
+        if( ec == std::errc() ) NFX_STRINGBUILDER_LIKELY
         {
             m_size = ptr - m_buffer;
         }
@@ -280,12 +280,12 @@ namespace nfx::string
 
     inline StringBuilder& StringBuilder::append( std::uint64_t value )
     {
-        if( m_size + UINT64_MAX_DIGITS > m_capacity ) [[unlikely]]
+        if( m_size + UINT64_MAX_DIGITS > m_capacity ) NFX_STRINGBUILDER_UNLIKELY
         {
             ensureCapacity( m_size + UINT64_MAX_DIGITS );
         }
         auto [ptr, ec] = std::to_chars( m_buffer + m_size, m_buffer + m_capacity, value );
-        if( ec == std::errc() ) [[likely]]
+        if( ec == std::errc() ) NFX_STRINGBUILDER_LIKELY
         {
             m_size = ptr - m_buffer;
         }
@@ -294,12 +294,12 @@ namespace nfx::string
 
     inline StringBuilder& StringBuilder::append( float value )
     {
-        if( m_size + FLOAT_MAX_CHARS > m_capacity ) [[unlikely]]
+        if( m_size + FLOAT_MAX_CHARS > m_capacity ) NFX_STRINGBUILDER_UNLIKELY
         {
             ensureCapacity( m_size + FLOAT_MAX_CHARS );
         }
         auto [ptr, ec] = std::to_chars( m_buffer + m_size, m_buffer + m_capacity, value );
-        if( ec == std::errc() ) [[likely]]
+        if( ec == std::errc() ) NFX_STRINGBUILDER_LIKELY
         {
             m_size = ptr - m_buffer;
         }
@@ -308,12 +308,12 @@ namespace nfx::string
 
     inline StringBuilder& StringBuilder::append( double value )
     {
-        if( m_size + DOUBLE_MAX_CHARS > m_capacity ) [[unlikely]]
+        if( m_size + DOUBLE_MAX_CHARS > m_capacity ) NFX_STRINGBUILDER_UNLIKELY
         {
             ensureCapacity( m_size + DOUBLE_MAX_CHARS );
         }
         auto [ptr, ec] = std::to_chars( m_buffer + m_size, m_buffer + m_capacity, value );
-        if( ec == std::errc() ) [[likely]]
+        if( ec == std::errc() ) NFX_STRINGBUILDER_LIKELY
         {
             m_size = ptr - m_buffer;
         }
@@ -329,7 +329,7 @@ namespace nfx::string
         const size_t len = str.size();
         const size_t newSize = m_size + len + 1; // +1 for newline
 
-        if( newSize > m_capacity ) [[unlikely]]
+        if( newSize > m_capacity ) NFX_STRINGBUILDER_UNLIKELY
         {
             ensureCapacity( newSize );
         }
@@ -354,7 +354,7 @@ namespace nfx::string
 
     inline StringBuilder& StringBuilder::appendLine( const char* str )
     {
-        if( str ) [[likely]]
+        if( str ) NFX_STRINGBUILDER_LIKELY
         {
             return appendLine( std::string_view{ str, strlen( str ) } );
         }
@@ -383,7 +383,7 @@ namespace nfx::string
 
     inline StringBuilder& StringBuilder::prepend( char c )
     {
-        if( m_size + 1 > m_capacity ) [[unlikely]]
+        if( m_size + 1 > m_capacity ) NFX_STRINGBUILDER_UNLIKELY
         {
             ensureCapacity( m_size + 1 );
         }
@@ -405,7 +405,7 @@ namespace nfx::string
     {
         char buffer[INT8_MAX_DIGITS];
         auto [ptr, ec] = std::to_chars( buffer, buffer + INT8_MAX_DIGITS, static_cast<int>( value ) );
-        if( ec == std::errc() ) [[likely]]
+        if( ec == std::errc() ) NFX_STRINGBUILDER_LIKELY
         {
             return prepend( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
         }
@@ -416,7 +416,7 @@ namespace nfx::string
     {
         char buffer[UINT8_MAX_DIGITS];
         auto [ptr, ec] = std::to_chars( buffer, buffer + UINT8_MAX_DIGITS, static_cast<unsigned>( value ) );
-        if( ec == std::errc() ) [[likely]]
+        if( ec == std::errc() ) NFX_STRINGBUILDER_LIKELY
         {
             return prepend( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
         }
@@ -427,7 +427,7 @@ namespace nfx::string
     {
         char buffer[INT16_MAX_DIGITS];
         auto [ptr, ec] = std::to_chars( buffer, buffer + INT16_MAX_DIGITS, value );
-        if( ec == std::errc() ) [[likely]]
+        if( ec == std::errc() ) NFX_STRINGBUILDER_LIKELY
         {
             return prepend( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
         }
@@ -438,7 +438,7 @@ namespace nfx::string
     {
         char buffer[UINT16_MAX_DIGITS];
         auto [ptr, ec] = std::to_chars( buffer, buffer + UINT16_MAX_DIGITS, value );
-        if( ec == std::errc() ) [[likely]]
+        if( ec == std::errc() ) NFX_STRINGBUILDER_LIKELY
         {
             return prepend( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
         }
@@ -449,7 +449,7 @@ namespace nfx::string
     {
         char buffer[INT32_MAX_DIGITS];
         auto [ptr, ec] = std::to_chars( buffer, buffer + INT32_MAX_DIGITS, value );
-        if( ec == std::errc() ) [[likely]]
+        if( ec == std::errc() ) NFX_STRINGBUILDER_LIKELY
         {
             return prepend( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
         }
@@ -460,7 +460,7 @@ namespace nfx::string
     {
         char buffer[UINT32_MAX_DIGITS];
         auto [ptr, ec] = std::to_chars( buffer, buffer + UINT32_MAX_DIGITS, value );
-        if( ec == std::errc() ) [[likely]]
+        if( ec == std::errc() ) NFX_STRINGBUILDER_LIKELY
         {
             return prepend( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
         }
@@ -471,7 +471,7 @@ namespace nfx::string
     {
         char buffer[INT64_MAX_DIGITS];
         auto [ptr, ec] = std::to_chars( buffer, buffer + INT64_MAX_DIGITS, value );
-        if( ec == std::errc() ) [[likely]]
+        if( ec == std::errc() ) NFX_STRINGBUILDER_LIKELY
         {
             return prepend( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
         }
@@ -482,7 +482,7 @@ namespace nfx::string
     {
         char buffer[UINT64_MAX_DIGITS];
         auto [ptr, ec] = std::to_chars( buffer, buffer + UINT64_MAX_DIGITS, value );
-        if( ec == std::errc() ) [[likely]]
+        if( ec == std::errc() ) NFX_STRINGBUILDER_LIKELY
         {
             return prepend( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
         }
@@ -493,7 +493,7 @@ namespace nfx::string
     {
         char buffer[FLOAT_MAX_CHARS];
         auto [ptr, ec] = std::to_chars( buffer, buffer + FLOAT_MAX_CHARS, value );
-        if( ec == std::errc() ) [[likely]]
+        if( ec == std::errc() ) NFX_STRINGBUILDER_LIKELY
         {
             return prepend( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
         }
@@ -504,7 +504,7 @@ namespace nfx::string
     {
         char buffer[DOUBLE_MAX_CHARS];
         auto [ptr, ec] = std::to_chars( buffer, buffer + DOUBLE_MAX_CHARS, value );
-        if( ec == std::errc() ) [[likely]]
+        if( ec == std::errc() ) NFX_STRINGBUILDER_LIKELY
         {
             return prepend( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
         }
@@ -615,12 +615,14 @@ namespace nfx::string
     // Formatting operations
     //----------------------------------------------
 
+#if defined( NFX_STRINGBUILDER_HAS_STD_FORMAT )
     template <typename... Args>
     inline StringBuilder& StringBuilder::format( std::format_string<Args...> fmt, Args&&... args )
     {
         std::format_to( std::back_inserter( *this ), fmt, std::forward<Args>( args )... );
         return *this;
     }
+#endif // NFX_STRINGBUILDER_HAS_STD_FORMAT
 
     //----------------------------------------------
     // Join operations
@@ -742,6 +744,7 @@ namespace nfx::string
     }
 } // namespace nfx::string
 
+#if defined( NFX_STRINGBUILDER_HAS_STD_FORMAT )
 namespace std
 {
     //=====================================================================
@@ -762,3 +765,4 @@ namespace std
         }
     };
 } // namespace std
+#endif // NFX_STRINGBUILDER_HAS_STD_FORMAT

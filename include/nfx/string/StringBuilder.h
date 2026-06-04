@@ -71,10 +71,28 @@
 #pragma once
 
 #include <cstdint>
-#include <format>
 #include <memory>
 #include <string>
 #include <string_view>
+
+#if defined( __has_include )
+#    if __has_include( <version> )
+#        include <version>
+#    endif
+#endif
+
+/**
+ * @def NFX_STRINGBUILDER_HAS_STD_FORMAT
+ * @brief Defined to 1 when C++20 std::format support is available
+ * @details std::format requires C++20. When building under C++17 (or with a
+ *          standard library that lacks <format>), the format() method and the
+ *          std::formatter specialization are disabled, while the rest of the
+ *          StringBuilder API remains fully available.
+ */
+#if defined( __cpp_lib_format ) && __cpp_lib_format >= 201907L
+#    include <format>
+#    define NFX_STRINGBUILDER_HAS_STD_FORMAT 1
+#endif
 
 /**
  * @def NFX_STRINGBUILDER_FORCE_INLINE
@@ -86,6 +104,32 @@
 #    define NFX_STRINGBUILDER_FORCE_INLINE __attribute__( ( always_inline ) ) inline
 #else
 #    define NFX_STRINGBUILDER_FORCE_INLINE inline
+#endif
+
+/**
+ * @def NFX_STRINGBUILDER_LIKELY
+ * @def NFX_STRINGBUILDER_UNLIKELY
+ * @brief Branch-prediction hint attributes (C++20 [[likely]]/[[unlikely]])
+ * @details Expand to the C++20 attributes when supported and to nothing under
+ *          C++17, keeping hot-path branch hints warning-free across standards.
+ *          The language-version check is required because some compilers report
+ *          __has_cpp_attribute(likely) as available in C++17 as an extension.
+ */
+#if defined( _MSVC_LANG )
+#    define NFX_STRINGBUILDER_CPLUSPLUS _MSVC_LANG
+#else
+#    define NFX_STRINGBUILDER_CPLUSPLUS __cplusplus
+#endif
+
+#if NFX_STRINGBUILDER_CPLUSPLUS >= 202002L && defined( __has_cpp_attribute )
+#    if __has_cpp_attribute( likely ) >= 201803L
+#        define NFX_STRINGBUILDER_LIKELY [[likely]]
+#        define NFX_STRINGBUILDER_UNLIKELY [[unlikely]]
+#    endif
+#endif
+#if !defined( NFX_STRINGBUILDER_LIKELY )
+#    define NFX_STRINGBUILDER_LIKELY
+#    define NFX_STRINGBUILDER_UNLIKELY
 #endif
 
 namespace nfx::string
@@ -676,6 +720,7 @@ namespace nfx::string
         // Formatting operations
         //----------------------------------------------
 
+#if defined( NFX_STRINGBUILDER_HAS_STD_FORMAT )
         /**
          * @brief Format and append text using std::format
          * @tparam Args Types of the formatting arguments
@@ -685,9 +730,11 @@ namespace nfx::string
          * @details Provides type-safe formatting directly into the builder without intermediate allocations.
          *          Uses std::format_to with back_inserter for optimal performance.
          *          Example: builder.format("User {} (ID: {}) logged in at {}", name, userId, timestamp);
+         * @note Requires C++20 std::format support (NFX_STRINGBUILDER_HAS_STD_FORMAT).
          */
         template <typename... Args>
         inline StringBuilder& format( std::format_string<Args...> fmt, Args&&... args );
+#endif // NFX_STRINGBUILDER_HAS_STD_FORMAT
 
         //----------------------------------------------
         // String conversion

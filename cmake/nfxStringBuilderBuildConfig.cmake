@@ -30,6 +30,19 @@ if(NOT NFX_STRINGBUILDER_BUILD_STATIC AND NOT NFX_STRINGBUILDER_BUILD_SHARED)
     endif()
 endif()
 
+# --- Validate the requested C++ standard ---
+if(NOT NFX_STRINGBUILDER_CXX_STANDARD MATCHES "^(17|20)$")
+    message(FATAL_ERROR
+        "NFX_STRINGBUILDER_CXX_STANDARD must be either 17 or 20 "
+        "(got '${NFX_STRINGBUILDER_CXX_STANDARD}').")
+endif()
+
+if(NFX_STRINGBUILDER_CXX_STANDARD STREQUAL "17")
+    message(STATUS "nfx-stringbuilder: Building with C++17 (std::format API disabled)")
+else()
+    message(STATUS "nfx-stringbuilder: Building with C++${NFX_STRINGBUILDER_CXX_STANDARD}")
+endif()
+
 #----------------------------------------------
 # Multi-config generator setup
 #----------------------------------------------
