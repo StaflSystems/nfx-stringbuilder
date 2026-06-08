@@ -38,6 +38,12 @@ enable_testing()
 option(NFX_STRINGBUILDER_BUILD_STATIC                 "Build static library"               ON )
 option(NFX_STRINGBUILDER_BUILD_SHARED                 "Build shared library"               OFF)
 
+# --- Language standard ---
+# Minimum required standard is C++17. C++20 additionally enables the
+# std::format()-based formatting API and the std::formatter specialization.
+set(NFX_STRINGBUILDER_CXX_STANDARD "20" CACHE STRING "C++ standard used to build nfx-stringbuilder (17 or 20)")
+set_property(CACHE NFX_STRINGBUILDER_CXX_STANDARD PROPERTY STRINGS "17" "20")
+
 # --- Build components ---
 option(NFX_STRINGBUILDER_BUILD_TESTS                  "Build tests"                        OFF)
 option(NFX_STRINGBUILDER_BUILD_SAMPLES                "Build samples"                      OFF)

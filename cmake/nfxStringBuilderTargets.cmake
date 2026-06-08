@@ -65,7 +65,7 @@ function(configure_target target_name)
     # --- Properties ---
     set_target_properties(${target_name}
         PROPERTIES
-            CXX_STANDARD 20
+            CXX_STANDARD ${NFX_STRINGBUILDER_CXX_STANDARD}
             CXX_STANDARD_REQUIRED ON
             CXX_EXTENSIONS OFF
             DEBUG_POSTFIX "-d"
@@ -73,6 +73,12 @@ function(configure_target target_name)
             VERSION ${PROJECT_VERSION}
             SOVERSION ${PROJECT_VERSION_MAJOR}
     )
+
+    # --- Public language requirement ---
+    # Propagate a minimum of C++17 to consumers of the static/shared targets.
+    # The headers compile under both C++17 and C++20; consumers may build at a
+    # higher standard than the library was compiled with.
+    target_compile_features(${target_name} PUBLIC cxx_std_17)
 
     # --- Enable specific CPU features ---
     if(NFX_STRINGBUILDER_ENABLE_SIMD)

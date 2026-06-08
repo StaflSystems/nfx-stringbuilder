@@ -334,7 +334,7 @@ namespace nfx::string::test
     TEST( StringBuilder, AppendInt32 )
     {
         StringBuilder builder;
-        builder.append( static_cast<std::int32_t>( -2147483648 ) );
+        builder.append( static_cast<std::int32_t>( -2147483647 - 1 ) );
         EXPECT_EQ( builder.toString(), "-2147483648" );
 
         builder.clear();
@@ -765,6 +765,7 @@ namespace nfx::string::test
     //  Format operator
     //----------------------------------------------
 
+#if defined( NFX_STRINGBUILDER_HAS_STD_FORMAT )
     TEST( StringBuilder, FormatBasic )
     {
         StringBuilder builder;
@@ -792,6 +793,7 @@ namespace nfx::string::test
         builder.append( "Start: " ).format( "{}", 100 ).append( " End" );
         EXPECT_EQ( builder.toString(), "Start: 100 End" );
     }
+#endif // NFX_STRINGBUILDER_HAS_STD_FORMAT
 
     //----------------------------------------------
     //  String conversion
@@ -944,8 +946,13 @@ namespace nfx::string::test
     TEST( StringBuilder, ComplexChaining )
     {
         StringBuilder builder;
+#if defined( NFX_STRINGBUILDER_HAS_STD_FORMAT )
         ( ( builder.append( "Start" ).append( " middle " ).append( 42 ).format( " formatted: {}", "text" ) )
               .append( " end" ) );
+#else
+        ( ( builder.append( "Start" ).append( " middle " ).append( 42 ).append( " formatted: text" ) )
+              .append( " end" ) );
+#endif
 
         std::string result = builder.toString();
         EXPECT_NE( result.find( "Start" ), std::string::npos );

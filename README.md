@@ -4,17 +4,17 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://github.com/nfx-libs/nfx-stringbuilder/blob/main/LICENSE) [![GitHub release (latest by date)](https://img.shields.io/github/v/release/nfx-libs/nfx-stringbuilder?style=flat-square)](https://github.com/nfx-libs/nfx-stringbuilder/releases) [![GitHub tag (latest by date)](https://img.shields.io/github/tag/nfx-libs/nfx-stringbuilder?style=flat-square)](https://github.com/nfx-libs/nfx-stringbuilder/tags)<br/>
 
-![C++20](https://img.shields.io/badge/C%2B%2B-20-blue?style=flat-square) ![CMake](https://img.shields.io/badge/CMake-3.20%2B-green.svg?style=flat-square) ![Cross Platform](https://img.shields.io/badge/Platform-Linux_Windows-lightgrey?style=flat-square)
+![C++17/20](https://img.shields.io/badge/C%2B%2B-17%2F20-blue?style=flat-square) ![CMake](https://img.shields.io/badge/CMake-3.20%2B-green.svg?style=flat-square) ![Cross Platform](https://img.shields.io/badge/Platform-Linux_Windows-lightgrey?style=flat-square)
 
 <!-- CI/CD Status -->
 
 [![Linux GCC](https://img.shields.io/github/actions/workflow/status/nfx-libs/nfx-stringbuilder/build-linux-gcc.yml?branch=main&label=Linux%20GCC&style=flat-square)](https://github.com/nfx-libs/nfx-stringbuilder/actions/workflows/build-linux-gcc.yml) [![Linux Clang](https://img.shields.io/github/actions/workflow/status/nfx-libs/nfx-stringbuilder/build-linux-clang.yml?branch=main&label=Linux%20Clang&style=flat-square)](https://github.com/nfx-libs/nfx-stringbuilder/actions/workflows/build-linux-clang.yml) [![Windows MinGW](https://img.shields.io/github/actions/workflow/status/nfx-libs/nfx-stringbuilder/build-windows-mingw.yml?branch=main&label=Windows%20MinGW&style=flat-square)](https://github.com/nfx-libs/nfx-stringbuilder/actions/workflows/build-windows-mingw.yml) [![Windows MSVC](https://img.shields.io/github/actions/workflow/status/nfx-libs/nfx-stringbuilder/build-windows-msvc.yml?branch=main&label=Windows%20MSVC&style=flat-square)](https://github.com/nfx-libs/nfx-stringbuilder/actions/workflows/build-windows-msvc.yml) [![CodeQL](https://img.shields.io/github/actions/workflow/status/nfx-libs/nfx-stringbuilder/codeql.yml?branch=main&label=CodeQL&style=flat-square)](https://github.com/nfx-libs/nfx-stringbuilder/actions/workflows/codeql.yml)
 
-> A cross-platform C++20 high-performance string builder with Small Buffer Optimization and efficient memory management
+> A cross-platform C++17/C++20 high-performance string builder with Small Buffer Optimization and efficient memory management
 
 ## Overview
 
-**nfx-stringbuilder** is a modern C++20 library providing efficient string building capabilities with zero heap allocations for small strings (≤256 bytes). Designed for applications requiring high-performance string concatenation with minimal allocations, it features Small Buffer Optimization (SBO), comprehensive type support, and C++20 std::format integration.
+**nfx-stringbuilder** is a modern C++ library providing efficient string building capabilities with zero heap allocations for small strings (≤256 bytes). Designed for applications requiring high-performance string concatenation with minimal allocations, it features Small Buffer Optimization (SBO) and comprehensive type support. It builds with **C++17 or C++20**: the core API is fully available under C++17, while C++20 additionally enables the `std::format`-based `format()` method and the `std::formatter` specialization.
 
 ## Key Features
 
@@ -23,8 +23,8 @@
 - **Fluent API**: Method chaining and stream operators (`<<`) for natural concatenation
 - **Variadic append()**: Batch multiple arguments in a single call for optimal performance
 - **Type Support**: Strings, string_view, C-strings, characters, and numeric types (int8/16/32/64, uint8/16/32/64, float, double)
-- **C++20 std::format Integration**: Template `format()` method for modern formatting
-- **std::formatter Specializations**: Zero-copy integration with `std::format` for StringBuilder
+- **C++20 std::format Integration**: Template `format()` method for modern formatting *(requires C++20)*
+- **std::formatter Specializations**: Zero-copy integration with `std::format` for StringBuilder *(requires C++20)*
 - **Capacity Hints**: Pre-allocate buffers with constructor parameter for optimal performance
 - **Direct Buffer Access**: High-performance operations without wrappers
 - **Iterator Support**: Range-based for loops and STL algorithms
@@ -57,11 +57,20 @@
 
 ### Requirements
 
-- C++20 compatible compiler:
+- C++17 or C++20 compatible compiler:
   - **GCC 14+** (14.2.0 tested)
   - **Clang 18+** (19.1.7 tested)
   - **MSVC 2022+** (19.44+ tested)
 - CMake 3.20 or higher
+
+> **C++ standard:** The library defaults to building with C++20. Select the
+> standard explicitly with `-DNFX_STRINGBUILDER_CXX_STANDARD=17` or `=20`.
+> Under C++17 the entire API is available except the `std::format`-based
+> `format()` method and the `std::formatter<StringBuilder>` specialization,
+> which require C++20. The exported `nfx-stringbuilder::static` and
+> `nfx-stringbuilder::nfx-stringbuilder` targets propagate a minimum
+> requirement of C++17 to consumers, who may compile at a higher standard than
+> the library was built with.
 
 ### CMake Integration
 
@@ -69,6 +78,9 @@
 # --- Library build types ---
 option(NFX_STRINGBUILDER_BUILD_STATIC                 "Build static library"               ON )
 option(NFX_STRINGBUILDER_BUILD_SHARED                 "Build shared library"               OFF)
+
+# --- Language standard (17 or 20; C++20 enables std::format APIs) ---
+set(NFX_STRINGBUILDER_CXX_STANDARD "20" CACHE STRING "C++ standard used to build nfx-stringbuilder (17 or 20)")
 
 # --- Build components ---
 option(NFX_STRINGBUILDER_BUILD_TESTS                  "Build tests"                        OFF)

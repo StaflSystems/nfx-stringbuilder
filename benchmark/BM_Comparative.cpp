@@ -42,7 +42,9 @@
 #    include <absl/strings/str_join.h>
 #endif
 
-#include <format>
+#if defined( NFX_STRINGBUILDER_HAS_STD_FORMAT )
+#    include <format>
+#endif
 #include <sstream>
 
 namespace nfx::string::benchmark
@@ -545,9 +547,11 @@ namespace nfx::string::benchmark
         for( auto _ : state )
         {
             (void)_;
+#if defined( NFX_STRINGBUILDER_HAS_STD_FORMAT )
             std::string result =
                 std::format( "User {} (ID: {}) scored {:.2f} points at {}", "Alice", 42, 95.75, "2024-01-15 10:30:00" );
             ::benchmark::DoNotOptimize( result );
+#endif
         }
     }
 
@@ -582,11 +586,13 @@ namespace nfx::string::benchmark
         for( auto _ : state )
         {
             (void)_;
+#if defined( NFX_STRINGBUILDER_HAS_STD_FORMAT )
             StringBuilder builder;
             builder.append( std::format(
                 "User {} (ID: {}) scored {:.2f} points at {}", "Alice", 42, 95.75, "2024-01-15 10:30:00" ) );
             std::string result = builder.toString();
             ::benchmark::DoNotOptimize( result );
+#endif
         }
     }
 
