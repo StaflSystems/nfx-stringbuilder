@@ -132,6 +132,22 @@
 #    define NFX_STRINGBUILDER_UNLIKELY
 #endif
 
+/**
+ * @def NFX_STRINGBUILDER_HAS_FLOAT_TO_CHARS
+ * @brief Whether std::to_chars(float/double) is usable on this toolchain.
+ * @details Integer std::to_chars is universally available, but the
+ *          floating-point overloads are not: IAR's libc++ ships them as deleted
+ *          functions. When unavailable the float/double formatters fall back to
+ *          std::snprintf. Define this to 0/1 before including to override.
+ */
+#if !defined( NFX_STRINGBUILDER_HAS_FLOAT_TO_CHARS )
+#    if defined( __IAR_SYSTEMS_ICC__ )
+#        define NFX_STRINGBUILDER_HAS_FLOAT_TO_CHARS 0
+#    else
+#        define NFX_STRINGBUILDER_HAS_FLOAT_TO_CHARS 1
+#    endif
+#endif
+
 namespace nfx::string
 {
     //=====================================================================
