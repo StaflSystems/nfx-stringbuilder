@@ -33,6 +33,11 @@
 #include <iterator>
 #include <utility>
 
+#if !NFX_STRINGBUILDER_HAS_FLOAT_TO_CHARS
+#    include <cstdio>
+#    include <limits>
+#endif
+
 namespace nfx::string
 {
     //=====================================================================
@@ -298,11 +303,21 @@ namespace nfx::string
         {
             ensureCapacity( m_size + FLOAT_MAX_CHARS );
         }
+#if NFX_STRINGBUILDER_HAS_FLOAT_TO_CHARS
         auto [ptr, ec] = std::to_chars( m_buffer + m_size, m_buffer + m_capacity, value );
         if( ec == std::errc() ) NFX_STRINGBUILDER_LIKELY
         {
             m_size = ptr - m_buffer;
         }
+#else
+        char scratch[FLOAT_MAX_CHARS + 1];
+        const int written = std::snprintf( scratch, sizeof( scratch ), "%.*g",
+            std::numeric_limits<float>::max_digits10, static_cast<double>( value ) );
+        if( written > 0 )
+        {
+            return append( std::string_view{ scratch, static_cast<size_t>( written ) } );
+        }
+#endif
         return *this;
     }
 
@@ -312,11 +327,21 @@ namespace nfx::string
         {
             ensureCapacity( m_size + DOUBLE_MAX_CHARS );
         }
+#if NFX_STRINGBUILDER_HAS_FLOAT_TO_CHARS
         auto [ptr, ec] = std::to_chars( m_buffer + m_size, m_buffer + m_capacity, value );
         if( ec == std::errc() ) NFX_STRINGBUILDER_LIKELY
         {
             m_size = ptr - m_buffer;
         }
+#else
+        char scratch[DOUBLE_MAX_CHARS + 1];
+        const int written = std::snprintf( scratch, sizeof( scratch ), "%.*g",
+            std::numeric_limits<double>::max_digits10, value );
+        if( written > 0 )
+        {
+            return append( std::string_view{ scratch, static_cast<size_t>( written ) } );
+        }
+#endif
         return *this;
     }
 
@@ -491,23 +516,43 @@ namespace nfx::string
 
     inline StringBuilder& StringBuilder::prepend( float value )
     {
+#if NFX_STRINGBUILDER_HAS_FLOAT_TO_CHARS
         char buffer[FLOAT_MAX_CHARS];
         auto [ptr, ec] = std::to_chars( buffer, buffer + FLOAT_MAX_CHARS, value );
         if( ec == std::errc() ) NFX_STRINGBUILDER_LIKELY
         {
             return prepend( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
         }
+#else
+        char buffer[FLOAT_MAX_CHARS + 1];
+        const int written = std::snprintf( buffer, sizeof( buffer ), "%.*g",
+            std::numeric_limits<float>::max_digits10, static_cast<double>( value ) );
+        if( written > 0 )
+        {
+            return prepend( std::string_view{ buffer, static_cast<size_t>( written ) } );
+        }
+#endif
         return *this;
     }
 
     inline StringBuilder& StringBuilder::prepend( double value )
     {
+#if NFX_STRINGBUILDER_HAS_FLOAT_TO_CHARS
         char buffer[DOUBLE_MAX_CHARS];
         auto [ptr, ec] = std::to_chars( buffer, buffer + DOUBLE_MAX_CHARS, value );
         if( ec == std::errc() ) NFX_STRINGBUILDER_LIKELY
         {
             return prepend( std::string_view{ buffer, static_cast<size_t>( ptr - buffer ) } );
         }
+#else
+        char buffer[DOUBLE_MAX_CHARS + 1];
+        const int written = std::snprintf( buffer, sizeof( buffer ), "%.*g",
+            std::numeric_limits<double>::max_digits10, value );
+        if( written > 0 )
+        {
+            return prepend( std::string_view{ buffer, static_cast<size_t>( written ) } );
+        }
+#endif
         return *this;
     }
 
